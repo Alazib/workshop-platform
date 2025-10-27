@@ -1,0 +1,37 @@
+# === Python / Django ===
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+.Python
+db.sqlite3
+.env
+.env.local
+
+# === Node / frontend ===
+node_modules/
+dist/
+build/
+.npm/
+.yarn/
+.pnpm/
+*.lock
+
+# === Java / Spring Boot ===
+target/
+.gradle/
+build/
+*.class
+*.jar
+*.war
+*.ear
+
+# === IDE / SO ===
+.DS_Store
+.idea/
+*.iml
+.vscode/
