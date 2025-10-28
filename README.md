@@ -11,4 +11,4 @@ Plataforma para crear y gestionar talleres y eventos culturales (organizadores, 
   - CURRENT_TASK.md
 
 ## Estado
-Fase actual: 0 — Preparación.
+Fase actual: 1 — Modelado del negocio.
