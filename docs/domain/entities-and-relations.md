@@ -253,8 +253,7 @@ Session N:1 Venue
 
 Session 1:N Registration
 
-Registration N:1 User
-Registration N:1 Session
+
 Payment N:1 Registration
 
 
