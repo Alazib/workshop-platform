@@ -70,15 +70,16 @@ Tabla intermedia para relación N:M entre `User` y `Role`.
 
 ## OrganizerAssignment
 
-Relaciona organizadores con talleres específicos.
+Relaciona organizadores con sesiones específicas.
 
 | Campo | Tipo | Descripción |
 |--------|------|-------------|
 | **id** | UUID | Identificador único |
 | **user_id** | FK(User) | Organizador asignado |
-| **workshop_id** | FK(Workshop) | Taller asociado |
+| **session_id** | FK(Session) | Sesión asociada |
 | **assigned_at** | datetime | Fecha de asignación |
 | **is_active** | boolean | Baja lógica del vínculo (pausar/rehabilitar) |
+
 
 ---
 
@@ -231,15 +232,25 @@ Instancia **operativa** de un taller: cuándo y dónde sucede realmente.
 ## Resumen global de relaciones
 
 User N:M Role (UserRole)
-User N:M Workshop (OrganizerAssignment, como organizer)
-User N:M Session (Registration, como attendee)
+
+User N:M Session (OrganizerAssignment, solo para users organizer)
+
+User N:M Session (Registration, solo para users attendee)
+
+
 
 Workshop 1:N Session
+
 Workshop 1:N Discount
+
 Workshop N:1 Category
 
+
 Session N:1 Workshop
+
+
 Session N:1 Venue
+
 Session 1:N Registration
 
 Registration N:1 User
