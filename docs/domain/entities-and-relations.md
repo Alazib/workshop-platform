@@ -29,7 +29,7 @@ User
 
 ├─ N:M → Role (vía UserRole)
 
-├─ N:M → Workshop (vía OrganizerAssignment, como organizer)
+├─ N:M → Session (vía OrganizerAssignment, como organizer)
 
 └─ N:M → Session (vía Registration, como attendee)
 
