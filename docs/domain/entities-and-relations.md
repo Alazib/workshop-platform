@@ -29,9 +29,10 @@ User
 
 ├─ N:M → Role (vía UserRole)
 
-├─ N:M → Workshop (vía Registration solo para rol attendee)
+├─ N:M → Workshop (vía OrganizerAssignment, como organizer)
 
-└─ N:M → Workshop (vía OrganizerAssignment rolo para rol organizer)
+└─ N:M → Session (vía Registration, como attendee)
+
 
 
 
@@ -120,7 +121,8 @@ Define descuentos o promociones aplicables a talleres específicos.
 
 ## Venue
 
-Lugar (físico o virtual) donde se imparte un taller o una sesión.
+Lugar (físico o virtual) donde se imparte una **Session**.  
+> Un Workshop es conceptual; el lugar solo aplica a la sesión concreta.
 
 | Campo | Tipo | Descripción |
 |--------|------|-------------|
@@ -138,10 +140,12 @@ Lugar (físico o virtual) donde se imparte un taller o una sesión.
 
 ## Workshop
 
-Representa un curso, taller o actividad cultural.
+Representa un curso, taller o actividad cultural **conceptual** (qué es el curso).
 
 ### Descripción
-Unidad principal de oferta: puede ser presencial, online o híbrida; pasa por estados de ciclo de vida; puede tener múltiples sesiones y varios organizadores; se puede crear en borrador.
+Unidad principal de oferta: puede declararse como presencial, online o híbrida (intención general).  
+No tiene estado operativo ni lugar físico; esas características se definen a nivel de **Session**.  
+Puede tener múltiples sesiones y varios organizadores; se puede crear en borrador (sin organizers).
 
 ### Campos
 
@@ -151,66 +155,95 @@ Unidad principal de oferta: puede ser presencial, online o híbrida; pasa por es
 | **title** | string | Título |
 | **description** | text | Descripción detallada |
 | **category_id** | FK(Category) | Categoría principal |
-| **format** | enum(`'physical'`, `'online'`, `'hybrid'`) | Modalidad general |
-| **status** | enum(`'draft'`, `'announced'`, `'published'`, `'full'`, `'cancelled'`, `'archived'`) | Estado/visibilidad |
-| **base_price** | decimal | Precio base |
+| **format** | enum(`'physical'`, `'online'`, `'hybrid'`) | Modalidad general (intención) |
+| **base_price** | decimal | Precio base sugerido (puede sobreescribirse por sesión) |
 | **image_url** | string | Portada/cartel |
 | **language** | string(2) | Idioma (`es`, `en`, …) |
 | **difficulty_level** | enum(`'beginner'`, `'intermediate'`, `'advanced'`) | Nivel |
-| **venue_id** | FK(Venue, nullable) | Sede principal opcional (las sesiones pueden tener su propio venue) |
 | **is_active** | boolean | Baja lógica del taller |
 | **created_at** | datetime | Creación |
 | **updated_at** | datetime | Última modificación |
 
-### Estados (`status`)
-
-| Estado | Visible por | Descripción |
-|---------|-------------|-------------|
-| `draft` | Admin y organizers asignados | Borrador |
-| `announced` | Público | Anunciado, sin fechas |
-| `published` | Público | Activo con sesiones |
-| `full` | Público | Lleno (inscripción cerrada) |
-| `cancelled` | Público | Cancelado/pospuesto |
-| `archived` | Público | Histórico, solo lectura |
-
-
-### Relaciones
-
+Relaciones:
 Workshop
-
-├─ belongs_to → Category
 
 ├─ has_many → Sessions
 
 ├─ has_many → OrganizerAssignments
 
-├─ has_many → Registrations
-
-└─ belongs_to → Venue (opcional)
+└─ has_many → Discounts
 
 
 
-### Notas
-- Descuentos en entidad `Discount` (relación N:1).
-- Aforo por `Session` (no en `Workshop`).
-- Visibilidad controla `status` + rol del usuario.
-- Puede existir sin organizer (borrador).
+> Notas:
+> - La visibilidad operativa (borrador, publicado, lleno, etc.) vive en **Session**.
+> - Aforo por `Session` (no en `Workshop`).
+
+---
+
+## Session
+
+Instancia **operativa** de un taller: cuándo y dónde sucede realmente.
+
+### Reglas clave del dominio
+- Una **Session** es **o física o online** (`type`), **nunca híbrida**.  
+- En estados `draft` y `announced`, la fecha/hora y el `venue_id` **pueden ser nulos**.  
+- Zona horaria del proyecto: **Europe/Madrid**.  
+- Controla **aforo mínimo y máximo**. Las plazas libres se **calculan** (no se almacenan).
+
+### Campos
+
+| Campo | Tipo | Descripción |
+|--------|------|-------------|
+| **id** | UUID | Identificador |
+| **workshop_id** | FK(Workshop) | Taller al que pertenece (obligatorio) |
+| **type** | enum(`'physical'`, `'online'`) | Modalidad concreta de la sesión |
+| **status** | enum(`'draft'`, `'announced'`, `'published'`, `'full'`, `'cancelled'`, `'postponed'`, `'completed'`, `'archived'`) | Estado operativo y visibilidad |
+| **starts_at** | datetime (nullable en `draft/announced`) | Inicio |
+| **ends_at** | datetime (nullable en `draft/announced`) | Fin |
+| **timezone** | string | Siempre `Europe/Madrid` (documentado) |
+| **venue_id** | FK(Venue, nullable en `draft/announced`) | Sede física/virtual concreta |
+| **capacity_min** | int | Plazas mínimas (apertura/viabilidad) |
+| **capacity_max** | int | Plazas máximas (aforo) |
+| **price_override** | decimal (nullable) | Precio específico de la sesión (si distinto de `Workshop.base_price`) |
+| **is_active** | boolean | Baja lógica de la sesión |
+| **created_at** | datetime | Creación |
+| **updated_at** | datetime | Última modificación |
+
+> Plazas libres = `capacity_max` − `count(Registration where status in ['pending','confirmed'])`  
+> (Campo **derivado**, no se almacena.)
+
+---
+
+## (Avance) Registration y Payment — referencia mínima para relaciones
+
+> **Aún por detallar en las Preguntas 4 y 5.**  
+> Dejamos aquí solo lo mínimo para mantener relaciones consistentes.
+
+### Registration (mínimo conceptual)
+- `id`, `user_id` (FK User), `session_id` (FK Session), `status` (`pending`, `confirmed`, `cancelled`, `refunded` …), `created_at`.
+
+### Payment (mínimo conceptual)
+- `id`, `registration_id` (FK Registration), `amount`, `method`, `status`, `paid_at`.
 
 ---
 
 ## Resumen global de relaciones
 
 User N:M Role (UserRole)
-
-User N:M Workshop (OrganizerAssignment solo para rol organizer)
-
-User N:M Workshop (Registration solo para rol attendee)
+User N:M Workshop (OrganizerAssignment, como organizer)
+User N:M Session (Registration, como attendee)
 
 Workshop 1:N Session
-
-Workshop N:1 Category
-Workshop N:1 Venue
 Workshop 1:N Discount
-Category 1:N Workshop
+Workshop N:1 Category
+
+Session N:1 Workshop
+Session N:1 Venue
+Session 1:N Registration
+
+Registration N:1 User
+Registration N:1 Session
+Payment N:1 Registration
 
 
