@@ -69,9 +69,10 @@ Debe reflejar todo su ciclo de vida (reserva, pago, asistencia, cancelación) y 
 ---
 
 ## Plan de implementación
-1. Añadir la entidad y restricciones a `entities-and-relations.md`.  
-2. Crear índice `UQ_registration_user_session`.  
-3. Implementar job/evento post-sesión → `confirmed → attended`.  
-4. Agregar lógica de cancelación con validación de plazo (7 días).  
-5. Sincronizar cambios con la futura entidad `Payment`.
+- Crear índice `UQ_registration_user_session`.  
+- Implementar job/evento post-sesión → `confirmed → attended`.  
+- Agregar lógica de cancelación con validación de plazo (7 días).  
+- Sincronizar cambios con la futura entidad `Payment`.
+- Implementar validación: máximo un pago activo por inscripción.  
+- Añadir triggers/eventos para sincronizar cancelaciones con devoluciones.
 
