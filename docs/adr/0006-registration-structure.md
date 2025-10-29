@@ -7,8 +7,7 @@
 
 ## Contexto
 La entidad `Registration` representa la inscripción de un usuario a una sesión (`Session`) concreta de un taller (`Workshop`).  
-Debe gestionar estados de pago, asistencia y cancelación, reflejar condiciones legales (derecho de desistimiento)  
-y mantener la trazabilidad de acciones tanto de usuarios como de organizadores.
+Debe reflejar todo su ciclo de vida (reserva, pago, asistencia, cancelación) y enlazarse con las operaciones financieras (`Payment`).
 
 ---
 
@@ -23,6 +22,11 @@ y mantener la trazabilidad de acciones tanto de usuarios como de organizadores.
 
 - Estados definidos:
   - Reserved, confirmed, attended, no_show, cancelled_by_user, cancelled_by_organizer
+ 
+### Estructura principal
+- `Registration` mantiene relación **1:N con `Payment`**.  
+- La unicidad `(user_id, session_id)` sigue aplicando a nivel de inscripción.  
+- Los `Payment` son entidades dependientes que registran **todas las transacciones** (pago inicial, devoluciones, reintentos).  
 
 
 - **Flujo de estados:**
@@ -37,8 +41,17 @@ y mantener la trazabilidad de acciones tanto de usuarios como de organizadores.
 | confirmed  | **attended**             | Asistencia automática al finalizar la sesión.                         |
 | attended   | **no_show**              | Marcado manual por organizador si no asistió.                         |
 
+--
 
-- Reglas complementarias:
+## Relación con Payment
+
+- `Registration` es el **origen de verdad (source of truth)** para la relación usuario–sesión.  
+- `Payment` contiene los **movimientos financieros** asociados a esa inscripción.
+
+  Registration 1 — N Payment
+---
+
+## Reglas complementarias:
 - `UNIQUE (user_id, session_id)` para evitar duplicados.  
 - Las reservas (`reserved`) bloquean plaza hasta cancelación manual. La reserva tiene que bajo la identidad de una persona concreta.
 - `Session.capacity_max` controla el aforo total; al alcanzarse, `Session.status → 'full'`.  
