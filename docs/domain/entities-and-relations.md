@@ -1,4 +1,4 @@
-# Entidades y Relaciones — Fase 1.2
+# Entidades y Relaciones — Fase 1.3
 
 Este documento define las entidades principales del dominio y sus relaciones iniciales.  
 El objetivo es capturar el modelo conceptual del sistema de gestión de talleres y eventos culturales,  
@@ -25,16 +25,10 @@ Representa a cualquier persona que interactúa con el sistema: administradores, 
 
 Relaciones:
 
-User
-
-├─ N:M → Role (vía UserRole)
-
-├─ N:M → Session (vía OrganizerAssignment, como organizer)
-
+User  
+├─ N:M → Role (vía UserRole)  
+├─ N:M → Session (vía OrganizerAssignment, como organizer)  
 └─ N:M → Session (vía Registration, como attendee)
-
-
-
 
 ---
 
@@ -79,7 +73,6 @@ Relaciona organizadores con sesiones específicas.
 | **session_id** | FK(Session) | Sesión asociada |
 | **assigned_at** | datetime | Fecha de asignación |
 | **is_active** | boolean | Baja lógica del vínculo (pausar/rehabilitar) |
-
 
 ---
 
@@ -165,19 +158,14 @@ Puede tener múltiples sesiones y varios organizadores; se puede crear en borrad
 | **created_at** | datetime | Creación |
 | **updated_at** | datetime | Última modificación |
 
-Relaciones:
-Workshop
-
-├─ has_many → Sessions
-
-├─ has_many → OrganizerAssignments
-
+Relaciones:  
+Workshop  
+├─ has_many → Sessions  
+├─ has_many → OrganizerAssignments  
 └─ has_many → Discounts
 
-
-
 > Notas:
-> - La visibilidad operativa (borrador, publicado, lleno, etc.) vive en **Session**.
+> - La visibilidad operativa (borrador, publicado, lleno, etc.) vive en **Session**.  
 > - Aforo por `Session` (no en `Workshop`).
 
 ---
@@ -211,18 +199,57 @@ Instancia **operativa** de un taller: cuándo y dónde sucede realmente.
 | **created_at** | datetime | Creación |
 | **updated_at** | datetime | Última modificación |
 
-> Plazas libres = `capacity_max` − `count(Registration where status in ['pending','confirmed'])`  
+> Plazas libres = `capacity_max` − `count(Registration where status in ['reserved','confirmed'])`  
 > (Campo **derivado**, no se almacena.)
 
 ---
 
-## (Avance) Registration y Payment — referencia mínima para relaciones
+## Registration
 
-> **Aún por detallar en las Preguntas 4 y 5.**  
-> Dejamos aquí solo lo mínimo para mantener relaciones consistentes.
+Representa la inscripción de un usuario a una **Session** concreta de un taller.  
+Gestiona los distintos estados del ciclo de vida de la participación y mantiene trazabilidad de precios, asistencias y cancelaciones.
 
-### Registration (mínimo conceptual)
-- `id`, `user_id` (FK User), `session_id` (FK Session), `status` (`pending`, `confirmed`, `cancelled`, `refunded` …), `created_at`.
+| Campo | Tipo | Descripción |
+|--------|------|-------------|
+| **id** | UUID | Identificador único |
+| **user_id** | FK(User) | Usuario inscrito |
+| **session_id** | FK(Session) | Sesión específica (obligatoria) |
+| **status** | enum(`reserved`, `confirmed`, `attended`, `no_show`, `cancelled_by_user`, `cancelled_by_organizer`) | Estado de la inscripción |
+| **registration_date** | datetime | Fecha de creación |
+| **confirmation_date** | datetime (nullable) | Fecha de confirmación del pago |
+| **cancelled_date** | datetime (nullable) | Fecha de cancelación |
+| **agreed_price** | decimal (nullable) | Precio acordado al momento de la inscripción |
+| **currency** | string(3) (nullable) | Moneda correspondiente |
+| **comments** | text (nullable) | Campo libre para observaciones, incidencias o motivos de cancelación |
+| **created_by** | FK(OrganizerAssignment, nullable) | Organizador que creó o gestionó la inscripción |
+| **source** | enum(`self`, `organizer`, `imported`) | Origen de la inscripción |
+| **created_at** | datetime | Creación del registro |
+| **updated_at** | datetime | Última modificación |
+
+### Notas
+- `agreed_price` refleja el **precio pactado** en el momento de la inscripción (incluyendo descuentos aplicados).  
+  Su función es mantener trazabilidad comercial aunque el precio del Workshop cambie.  
+- `amount_paid` no se guarda aquí, sino en la entidad `Payment`, que registra la transacción económica.  
+- El campo `comments` sirve para cualquier observación: motivo de cancelación, incidencias, notas internas o feedback del participante.  
+- `reserved` se usa únicamente para reservas manuales realizadas por un organizador.  
+- Cancelaciones automáticas y voluntarias están diferenciadas en `cancelled_by_user` y `cancelled_by_organizer`.
+
+Relaciones:
+
+User 1 — N Registration N — 1 Session N — 1 Workshop
+Registration 0..1 — 1 OrganizerAssignment (created_by)
+
+
+Restricciones:
+- UNIQUE (user_id, session_id)  
+- Las reservas y confirmaciones cuentan para el aforo de Session.  
+- Las cancelaciones del organizador actualizan automáticamente las inscripciones asociadas.
+
+---
+
+## (Avance) Payment — referencia mínima para relaciones
+
+> **Pendiente**
 
 ### Payment (mínimo conceptual)
 - `id`, `registration_id` (FK Registration), `amount`, `method`, `status`, `paid_at`.
@@ -231,29 +258,17 @@ Instancia **operativa** de un taller: cuándo y dónde sucede realmente.
 
 ## Resumen global de relaciones
 
-User N:M Role (UserRole)
+User N:M Role (UserRole)  
+User N:M Session (OrganizerAssignment, solo para users organizer)  
+User N:M Session (Registration, solo para users attendee)  
 
-User N:M Session (OrganizerAssignment, solo para users organizer)
+Workshop 1:N Session  
+Workshop 1:N Discount  
+Workshop N:1 Category  
 
-User N:M Session (Registration, solo para users attendee)
-
-
-
-Workshop 1:N Session
-
-Workshop 1:N Discount
-
-Workshop N:1 Category
-
-
-Session N:1 Workshop
-
-
-Session N:1 Venue
-
-Session 1:N Registration
-
+Session N:1 Workshop  
+Session N:1 Venue  
+Session 1:N Registration  
 
 Payment N:1 Registration
-
 
