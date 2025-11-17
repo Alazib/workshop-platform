@@ -161,8 +161,8 @@ Puede tener múltiples sesiones y varios organizadores; se puede crear en borrad
 Relaciones:  
 Workshop  
 ├─ has_many → Sessions  
-├─ has_many → OrganizerAssignments  
-└─ has_many → Discounts
+├─ has_many → OrganizerAssignments  REVISAR, QUIZÁ SEA MEJOR QUE RELACIONE CON SESIOON
+└─ has_many → Discounts  REVISAR, QUIZZÁ SEA MEJOR QUE SER RELACIONE CON SESSION
 
 > Notas:
 > - La visibilidad operativa (borrador, publicado, lleno, etc.) vive en **Session**.  
