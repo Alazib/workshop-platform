@@ -247,12 +247,36 @@ Restricciones:
 
 ---
 
-## (Avance) Payment — referencia mínima para relaciones
+## Payment
 
-> **Pendiente**
+Registra operaciones económicas (cobros y devoluciones) asociadas a una inscripción (`Registration`).  
+Actúa como un **log de transacciones** más que como un simple estado.
 
-### Payment (mínimo conceptual)
-- `id`, `registration_id` (FK Registration), `amount`, `method`, `status`, `paid_at`.
+| Campo | Tipo | Descripción |
+|--------|------|-------------|
+| **id** | UUID | Identificador único del pago |
+| **registration_id** | FK(Registration) | Inscripción asociada |
+| **type** | enum(`'charge'`, `'refund'`) | Tipo de operación: cobro o devolución |
+| **amount** | decimal | Importe de la operación (siempre positivo) |
+| **currency** | string(3) | Moneda (`EUR`, `USD`, …) |
+| **status** | enum(`'pending'`, `'paid'`, `'refunded'`, `'failed'`) | Estado de la operación |
+| **method** | enum(`'card'`, `'paypal'`, `'transfer'`, `'manual'`) | Método de pago utilizado |
+| **transaction_ref** | string (nullable) | Identificador en la pasarela de pago (Stripe, Redsys, etc.) |
+| **paid_at** | datetime (nullable) | Fecha/hora en que la operación se completa (`status = 'paid'`) |
+| **notes** | text (nullable) | Comentarios o metadatos (errores, códigos internos, info de reembolso) |
+| **created_at** | datetime | Creación del registro |
+| **updated_at** | datetime | Última modificación |
+
+### Notas
+
+- Una `Registration` puede tener **varios `Payment`** (cobro inicial, reintentos, devoluciones).  
+- El importe neto abonado se calcula como:
+
+  ```text
+  net_amount = SUM(amount WHERE type='charge' AND status='paid')
+             - SUM(amount WHERE type='refund' AND status='paid')
+
+
 
 ---
 
