@@ -270,11 +270,10 @@ Actúa como un **log de transacciones** más que como un simple estado.
 ### Notas
 
 - Una `Registration` puede tener **varios `Payment`** (cobro inicial, reintentos, devoluciones).  
-- El importe neto abonado se calcula como:
+- El importe neto abonado se calculará al vuelo como:
 
   ```text
-  net_amount = SUM(amount WHERE type='charge' AND status='paid')
-             - SUM(amount WHERE type='refund' AND status='paid')
+  net_amount = SUM(amount WHERE type='charge' AND status='paid') - SUM(amount WHERE type='refund' AND status='paid')
 
 
 
