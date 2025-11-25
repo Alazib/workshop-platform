@@ -1,131 +1,218 @@
-# 🗺️ Project Overview — Workshop Platform
+# 🗺️ Project Overview — Workshop Platform (Hoja de Ruta)
 
-## 🎯 Objetivo general
-Desarrollar una plataforma completa para la gestión de talleres y eventos culturales, con un enfoque profesional en **arquitectura de software**, **documentación**, **patrones de diseño** y **buenas prácticas**.
+Esta hoja de ruta sustituye al documento anterior y refleja la estrategia actual del proyecto basada en:
 
-El proyecto se estructura en **fases secuenciales** que reflejan el ciclo de vida de un sistema profesional, desde el análisis del dominio hasta el despliegue y documentación final.
+- Arquitectura Hexagonal (Ports & Adapters)
+- MVP rápido sobre Django
+- Iteraciones mediante vertical slices
+- Dominio estable y framework intercambiable
+- Enfoque profesional apto para portfolio y entrevistas
 
 ---
 
-## 🧭 Fases y tareas principales
+# 🎯 Objetivo general
 
-### 🏗️ Fase 0 — Preparación y gobernanza
-**Objetivo:** Establecer la base del proyecto y los estándares iniciales.  
+Construir una plataforma profesional para la gestión de talleres y eventos culturales, diseñada como proyecto de portfolio que demuestre:
+
+- Modelado de dominio real
+- Arquitectura hexagonal
+- Documentación técnica (ADRs, diagramas)
+- Capacidad de evolución y migración de frameworks
+- Desarrollo por vertical slices (enfoque moderno en equipos senior)
+
+---
+
+# 🧭 Estructura de fases
+
+Enfoque incremental basado en MVP + iteraciones.
+
+---
+
+# 🏗️ Fase 0 — Preparación y gobernanza  
+**Estado:** Completada parcialmente
+
+**Objetivo:** Crear el esqueleto del proyecto y la documentación inicial.
+
 **Tareas:**
-- Crear repositorio, estructura de carpetas y documentación base.
-- Incluir README, .gitignore y ADR inicial.
-- Configurar Issues y tableros de seguimiento.
-- Crear documento `CURRENT_TASK.md`.
+- Crear repositorio y estructura básica.
+- Añadir README inicial.
+- Configurar `.gitignore`.
+- Crear la carpeta `/docs/`.
+- Abrir Issues y tablero Kanban.
+- Definir formato de ADRs.
+- Añadir `CURRENT_TASK.md`.
 
 ---
 
-### 🧩 Fase 1 — Modelado del negocio
-**Objetivo:** Comprender el dominio funcional antes de desarrollar código.  
+# 🧩 Fase 1 — Modelado del dominio  
+**Estado:** COMPLETADA
+
+**Objetivo:** Cerrar las reglas de negocio y dejar el dominio “blindado”.
+
+**Tareas completadas:**
+- Historias de usuario.
+- Roles y permisos.
+- Entidades y relaciones.
+- Máquinas de estado (Session, Registration).
+- Política de cancelación y reembolsos.
+- ADRs principales del dominio.
+
+**Entregables:**
+- `/docs/domain/roles-and-stories.md`
+- `/docs/domain/entities-and-relations.md`
+- `/docs/domain/state-machines.md`
+- ADR 0004, 0005, 0007, 0008
+
+---
+
+# ⚙️ Fase 2 — Arquitectura + MVP Backend  
+**Estado:** EN PROGRESO
+
+**Objetivo:** Construir el backend mínimo funcional usando arquitectura hexagonal + Django.
+
+Este MVP debe permitir:
+- Ver sesiones publicadas
+- Inscribirse
+- Pagar (simulado)
+- Confirmación
+- Cancelación por usuario/organizador
+- Listado de inscripciones
+
+La arquitectura ya está definida en los ADR:
+
+- **ADR 0009 — Arquitectura Hexagonal**
+- **ADR 0010 — Django para el MVP + migración futura a Spring Boot**
+
+**Resultados al finalizar esta fase:**
+- Capa de dominio completa (Python puro)
+- Casos de uso del MVP implementados
+- Repositorios in-memory + adaptadores Django
+- Endpoints REST funcionando
+- Tests unitarios + de integración
+- Documentación actualizada
+
+**Importante:**
+A partir de este punto, **todo el desarrollo será por vertical slices**, no por capas completas.
+
+---
+
+# 🧗‍♂️ Fase 3 — Iteraciones del backend (vertical slices)
+
+**Objetivo:** Añadir funcionalidades incrementales al backend *uno por uno*, cada una como un slice vertical:
+
+Cada slice incluye:
+- Dominio (si afecta)
+- Caso de uso
+- Endpoint(s)
+- Repositorios
+- Tests
+- Documentación
+
+## Slices backend propuestos (orden recomendado):
+1. Autenticación básica (tokens simples o JWT)
+2. CRUD de Workshops
+3. CRUD de Sessions + asignación de venues
+4. Gestión de descuentos
+5. Gestión de organizers por sesión
+6. Gestión de pagos reales (Stripe)
+7. Reembolsos automáticos (Stripe)
+8. Reporting básico para admin
+9. Notificaciones (email)
+10. Exportaciones CSV/Excel
+
+**Nota:**  
+Cada slice produce una funcionalidad lista para demostración.
+
+---
+
+# 🎨 Fase 4 — Frontend (React + TypeScript)  
+**Objetivo:** Crear la interfaz conectada al backend, también por slices.
+
+## Slices frontend propuestos:
+1. Login + persistencia de sesión
+2. Listado de sesiones publicadas
+3. Ficha de sesión
+4. Flujo de inscripción + pago simulado
+5. Panel del usuario
+6. Panel admin (inscripciones, pagos)
+7. Gestión de workshops y sesiones
+8. Integración de pagos reales (Stripe JS)
+9. Dashboard admin
+10. Notificaciones y settings
+
+---
+
+# 💳 Fase 5 — Pagos reales y notificaciones  
+**Objetivo:** Llevar el proyecto a un nivel profesional incorporando pagos reales y comunicaciones.
+
 **Tareas:**
-1.1 Definir roles y escribir historias de usuario.  
-1.2 Identificar entidades y relaciones.  
-1.3 Crear el diagrama de dominio (ERD).  
-1.4 Redactar los casos de uso principales.
-
-**Entregables:**  
-`/docs/domain/roles-and-stories.md`  
-`/docs/domain/entities-and-relations.md`  
-`/docs/domain/usecases.md`  
+- Integrar Stripe (primer objetivo)
+- Posible integración con PayPal / Bizum
+- Reembolsos automáticos vía webhook
+- Notificaciones por email
+- Recordatorios automáticos
+- Selección de cola de mensajes (Celery o alternativas)
 
 ---
 
-### ⚙️ Fase 2 — Diseño arquitectónico y setup técnico
-**Objetivo:** Definir la arquitectura del sistema y preparar el entorno de desarrollo.  
+# 🔍 Fase 6 — Observabilidad  
+**Objetivo:** Mejorar calidad operacional.
+
 **Tareas:**
-2.1 Elegir el stack final (Django o Spring Boot).  
-2.2 Definir la arquitectura (por capas / hexagonal).  
-2.3 Diseñar la estructura de módulos y carpetas.  
-2.4 Configurar entorno local con Docker y base de datos.
-
-**Entregables:**  
-`/docs/adr/0002-architecture-choice.md`  
-`/docker-compose.yml`  
-Primer endpoint `/health`.
+- Logging estructurado
+- Métricas
+- Health checks
+- Trazabilidad de flujos (OpenTelemetry opcional)
+- Documentar SLOs y runbooks
 
 ---
 
-### 💻 Fase 3 — Backend (API y dominio)
-**Objetivo:** Implementar la lógica de negocio y los endpoints principales.  
+# 🚀 Fase 7 — CI/CD y despliegue  
+**Objetivo:** Pipeline profesional y despliegue automatizado.
+
 **Tareas:**
-3.1 Crear el esqueleto del backend.  
-3.2 Implementar entidades principales (User, Workshop, Session, Payment, etc.).  
-3.3 Añadir autenticación y roles (JWT o Auth estándar).  
-3.4 Implementar CRUDs básicos.  
-3.5 Añadir tests unitarios e integración.
+- Configurar CI (GitHub Actions / GitLab CI)
+- Ejecutar tests + lint en cada PR
+- Despliegue automático a Render / Railway / Vercel
+- Tests E2E en pipeline
 
 ---
 
-### 🎨 Fase 4 — Frontend (React + TypeScript)
-**Objetivo:** Desarrollar la interfaz de usuario y conectar con el backend.  
+# 📚 Fase 8 — Documentación profesional + Portfolio final  
+**Objetivo:** Preparar la documentación para publicación profesional.
+
 **Tareas:**
-4.1 Configurar React + TypeScript.  
-4.2 Crear componentes principales (Login, Dashboard, Talleres).  
-4.3 Conectar con API (React Query / Axios).  
-4.4 Añadir autenticación y rutas protegidas.  
-4.5 Testing de componentes.
+- Architecture Summary
+- Diagramas actualizados
+- ADRs finales
+- Capturas de pantalla
+- Screencast demo
+- README final
+- Preparar la presentación del portfolio
 
 ---
 
-### 💳 Fase 5 — Pagos y notificaciones
-**Objetivo:** Integrar pasarelas de pago y recordatorios automáticos.  
-**Tareas:**
-5.1 Integrar Stripe, PayPal y Bizum (pagos automáticos).  
-5.2 Añadir validación manual para transferencias.  
-5.3 Implementar notificaciones y recordatorios.  
-5.4 Configurar colas de mensajes (Celery / RabbitMQ).
+# 🧱 Entregables globales
+
+- Backend con dominio claro y arquitectura hexagonal
+- Frontend profesional y conectado
+- Pagos y notificaciones
+- Pipeline CI/CD funcionando
+- Documentación completa del sistema
+- Demostración pública
+- Migración opcional demostrable de Django → Spring Boot
 
 ---
 
-### 🔍 Fase 6 — Observabilidad y mantenimiento
-**Objetivo:** Asegurar la operatividad y trazabilidad del sistema.  
-**Tareas:**
-6.1 Añadir logging estructurado y métricas.  
-6.2 Configurar health-checks y tracing.  
-6.3 Documentar SLOs y runbooks.
+# 🔄 Flujo de trabajo general
 
----
+- Cada fase = una Issue principal.
+- Cada slice = subtareas/Issues asociadas.
+- Cada PR = referencia a la Issue:
 
-### 🚀 Fase 7 — CI/CD y despliegue
-**Objetivo:** Automatizar el flujo de entrega continua y despliegue del sistema.  
-**Tareas:**
-7.1 Configurar pipelines en GitHub Actions.  
-7.2 Pipeline completo (lint + tests + build + deploy).  
-7.3 Despliegue en Render / Railway / Vercel.  
-7.4 Tests end-to-end automáticos.
+    feat: add registration payment slice [#14]
+    fix: adjust cancellation rule [#23]
 
----
-
-### 📚 Fase 8 — Documentación profesional y portfolio
-**Objetivo:** Entregar la documentación final y preparar el proyecto para el portfolio profesional.  
-**Tareas:**
-8.1 Redactar documentación arquitectónica final (ADRs, diagramas).  
-8.2 Crear resumen “Architecture Summary”.  
-8.3 Preparar README final, capturas y video demo.
-
----
-
-## 🧱 Entregables globales
-- Documentación completa en `/docs/`.  
-- ADRs justificando cada decisión técnica.  
-- Diagramas ERD, de componentes y de despliegue.  
-- Backend y frontend funcionales con autenticación.  
-- Integración de pagos y notificaciones.  
-- Pipeline CI/CD operativo.  
-- Demo en producción y documentación profesional.
-
----
-
-## 🔄 Flujo de trabajo general
-Cada **fase** se gestiona mediante una **Issue principal** en GitHub, y dentro de cada Issue se reflejan sus **tareas** mediante una checklist.
-
-Cada **commit** y **PR (Pull Request)** debe incluir el ID de la Issue correspondiente, por ejemplo:
-
-feat: add workshop entity [#2]
-
-fix: adjust payment validation [#5]
+- La regla de oro:
+  *"Siempre funcional, siempre demostrable, siempre incrementando valor."*
 
