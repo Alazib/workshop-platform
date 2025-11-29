@@ -1,18 +1,26 @@
-# === Python / Django ===
+#1) === PYTHON / DJANGO ===
+
+# Python
 __pycache__/
 *.py[cod]
-*.sqlite3
+*.pyo
+
+# Virtual envs
+.venv/
+env/
+venv/
+
+# Django
+db.sqlite3
+media/
+staticfiles/
 *.log
 *.pot
-*.pyc
-*.pyo
-*.pyd
-.Python
-db.sqlite3
-.env
-.env.local
+local_settings.py
 
-# === Node / frontend ===
+
+
+#2) === NODE / FRONTEND ===
 node_modules/
 dist/
 build/
@@ -21,7 +29,10 @@ build/
 .pnpm/
 *.lock
 
-# === Java / Spring Boot ===
+
+
+
+#3) === JAVA / SPRING BOOT ===
 target/
 .gradle/
 build/
@@ -30,8 +41,11 @@ build/
 *.war
 *.ear
 
+
+
 # === IDE / SO ===
 .DS_Store
 .idea/
 *.iml
 .vscode/
+Thumbs.db
