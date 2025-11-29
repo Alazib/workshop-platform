@@ -1,4 +1,4 @@
-# ADR 0010 — Framework backend para el MVP: Django con opción de migración a Spring Boot
+# ADR 0010 — Framework backend para el MVP. Django con opción de migración a Spring Boot
 
 - Estado: ACEPTADA
 - Fecha: 2025-11-18
