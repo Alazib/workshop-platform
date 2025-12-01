@@ -1,8 +1,7 @@
 # Entidades y Relaciones — Fase 1.3
 
 Este documento define las entidades principales del dominio y sus relaciones iniciales.  
-El objetivo es capturar el modelo conceptual del sistema de gestión de talleres y eventos culturales,  
-manteniendo la trazabilidad de las decisiones arquitectónicas mediante ADRs.
+El objetivo es capturar el modelo conceptual del sistema de gestión de talleres manteniendo la trazabilidad de las decisiones arquitectónicas mediante ADRs.
 
 ---
 
@@ -64,7 +63,7 @@ Tabla intermedia para relación N:M entre `User` y `Role`.
 
 ## OrganizerAssignment
 
-Relaciona organizadores con sesiones específicas.
+Tabla intermedia para relación N:M entre `User` y `Session`. El user tiene que tener Rol Organizer
 
 | Campo | Tipo | Descripción |
 |--------|------|-------------|
@@ -110,6 +109,25 @@ Define descuentos o promociones aplicables a talleres específicos.
 | **created_at** | datetime | Creación |
 | **updated_at** | datetime | Última modificación |
 
+Relaciones:
+
+Discount  
+├─ N:M → Session (vía DiscountSession)  
+
+---
+
+## DiscountSession
+
+Tabla intermedia para relación N:M entre `Discount` y `Session`. 
+Define descuentos o promociones aplicables a talleres específicos.
+
+| Campo | Tipo | Descripción |
+|--------|------|-------------|
+| **id** | UUID | Identificador único |
+| **discount_id** | FK(Discount) | Descuento |
+| **session_id** | FK(Session) | Sesión a la que aplica el descuento |
+| **assigned_at** | datetime | Fecha de asignación |
+
 ---
 
 ## Venue
@@ -121,10 +139,9 @@ Lugar (físico o virtual) donde se imparte una **Session**.
 |--------|------|-------------|
 | **id** | UUID | Identificador único |
 | **name** | string | Nombre o etiqueta |
-| **type** | enum(`'physical'`, `'online'`, `'hybrid'`) | Tipo de sede |
-| **address** | string (nullable) | Dirección si es presencial |
+| **address** | string (nullable) | Dirección si es la sesión es presencial |
 | **city** | string (nullable) | Ciudad/localidad |
-| **online_url** | string (nullable) | Enlace al aula virtual |
+| **online_url** | string (nullable) | Enlace al aula virtual si la sesión es online |
 | **is_active** | boolean | Activar/desactivar sede |
 | **created_at** | datetime | Creación |
 | **updated_at** | datetime | Última modificación |
@@ -136,9 +153,9 @@ Lugar (físico o virtual) donde se imparte una **Session**.
 Representa un curso, taller o actividad cultural **conceptual** (qué es el curso).
 
 ### Descripción
-Unidad principal de oferta: puede declararse como presencial, online o híbrida (intención general).  
+Unidad principal de oferta.
 No tiene estado operativo ni lugar físico; esas características se definen a nivel de **Session**.  
-Puede tener múltiples sesiones y varios organizadores; se puede crear en borrador (sin organizers).
+Puede tener múltiples sesiones. Se puede crear en borrador (sin organizers).
 
 ### Campos
 
@@ -148,18 +165,16 @@ Puede tener múltiples sesiones y varios organizadores; se puede crear en borrad
 | **title** | string | Título |
 | **description** | text | Descripción detallada |
 | **category_id** | FK(Category) | Categoría principal |
-| **format** | enum(`'physical'`, `'online'`, `'hybrid'`) | Modalidad general (intención) |
 | **base_price** | decimal | Precio base sugerido (puede sobreescribirse por sesión) |
 | **image_url** | string | Portada/cartel |
 | **language** | string(2) | Idioma (`es`, `en`, …) |
-| **difficulty_level** | enum(`'beginner'`, `'intermediate'`, `'advanced'`) | Nivel |
 | **is_active** | boolean | Baja lógica del taller |
 | **created_at** | datetime | Creación |
 | **updated_at** | datetime | Última modificación |
 
 Relaciones:  
 Workshop  
-├─ has_many → Sessions  
+├─ N:1 → Category 
 
 > Notas:
 > - La visibilidad operativa (borrador, publicado, lleno, etc.) vive en **Session**.  
@@ -183,8 +198,6 @@ Instancia **operativa** de un taller: cuándo y dónde sucede realmente.
 |--------|------|-------------|
 | **id** | UUID | Identificador |
 | **workshop_id** | FK(Workshop) | Taller al que pertenece (obligatorio) |
-| **discount_id** | FK(Discount) | Descuento que aplica a la sesión (opcional) |
-| **OrganizerAssignment_id** | FK(OrganizerAssignment) | Organizador del taller (obligatorio) |
 | **type** | enum(`'physical'`, `'online'`) | Modalidad concreta de la sesión |
 | **status** | enum(`'draft'`, `'announced'`, `'published'`, `'full'`, `'cancelled'`, `'postponed'`, `'completed'`, `'archived'`) | Estado operativo y visibilidad |
 | **starts_at** | datetime (nullable en `draft/announced`) | Inicio |
@@ -197,15 +210,24 @@ Instancia **operativa** de un taller: cuándo y dónde sucede realmente.
 | **is_active** | boolean | Baja lógica de la sesión |
 | **created_at** | datetime | Creación |
 | **updated_at** | datetime | Última modificación |
+| **description** | text | Descripción detallada |
+| **comments** | string | Comentarios |
+
+
+Relaciones:  
+Session  
+├─ N:1 → Workshop 
+
+├─ N:1 → Venue
 
 > Plazas libres = `capacity_max` − `count(Registration where status in ['reserved','confirmed'])`  
 > (Campo **derivado**, no se almacena.)
 
+
 ---
 
 ## Registration
-
-Representa la inscripción de un usuario a una **Session** concreta de un taller.  
+Tabla intermedia para relación N:M entre `User` y `Session`: representa la inscripción de un usuario a una **Session** concreta de un taller.  
 Gestiona los distintos estados del ciclo de vida de la participación y mantiene trazabilidad de precios, asistencias y cancelaciones.
 
 | Campo | Tipo | Descripción |
@@ -225,6 +247,12 @@ Gestiona los distintos estados del ciclo de vida de la participación y mantiene
 | **created_at** | datetime | Creación del registro |
 | **updated_at** | datetime | Última modificación |
 
+Relaciones:  
+Registration  
+├─ N:1 → User 
+
+├─ N:1 → Session
+
 ### Notas
 - `agreed_price` refleja el **precio pactado** en el momento de la inscripción (incluyendo descuentos aplicados).  
   Su función es mantener trazabilidad comercial aunque el precio del Workshop cambie.  
@@ -232,11 +260,6 @@ Gestiona los distintos estados del ciclo de vida de la participación y mantiene
 - El campo `comments` sirve para cualquier observación: motivo de cancelación, incidencias, notas internas o feedback del participante.  
 - `reserved` se usa únicamente para reservas manuales realizadas por un organizador.  
 - Cancelaciones automáticas y voluntarias están diferenciadas en `cancelled_by_user` y `cancelled_by_organizer`.
-
-Relaciones:
-
-User 1 — N Registration N — 1 Session N — 1 Workshop
-Registration 0..1 — 1 OrganizerAssignment (created_by)
 
 
 Restricciones:
@@ -266,6 +289,10 @@ Actúa como un **log de transacciones** más que como un simple estado.
 | **created_at** | datetime | Creación del registro |
 | **updated_at** | datetime | Última modificación |
 
+Payment  
+├─ N:1 → Registration 
+
+
 ### Notas
 
 - Una `Registration` puede tener **varios `Payment`** (cobro inicial, reintentos, devoluciones).  
@@ -275,22 +302,23 @@ Actúa como un **log de transacciones** más que como un simple estado.
   net_amount = SUM(amount WHERE type='charge' AND status='paid') - SUM(amount WHERE type='refund' AND status='paid')
 
 
-
 ---
 
-## Resumen global de relaciones
 
-User N:M Role (UserRole)  
-User N:M Session (OrganizerAssignment, solo para users organizer)  
-User N:M Session (Registration, solo para users attendee)  
+## Resumen global de relaciones (pendiente de revisar)
 
-Workshop 1:N Session  
-Workshop 1:N Discount  
-Workshop N:1 Category  
+User N:M Role (vía UserRole)  
+User N:M Session (vía OrganizerAssignment, solo para users organizer)  
+User N:M Session (vía Registration, solo para users attendee) 
+
+Discount N:M Session (vía DiscountSession)  
+
+Workshop N:1 Category
 
 Session N:1 Workshop  
 Session N:1 Venue  
-Session 1:N Registration  
 
 Payment N:1 Registration
+
+
 
