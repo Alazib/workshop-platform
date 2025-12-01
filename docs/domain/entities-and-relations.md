@@ -100,7 +100,6 @@ Define descuentos o promociones aplicables a talleres específicos.
 | Campo | Tipo | Descripción |
 |--------|------|-------------|
 | **id** | UUID | Identificador único |
-| **workshop_id** | FK(Workshop) | Taller al que aplica |
 | **code** | string | Código promocional (opcional) |
 | **type** | enum(`'percentage'`, `'fixed'`) | Tipo de descuento |
 | **value** | decimal | Valor o porcentaje |
@@ -161,8 +160,6 @@ Puede tener múltiples sesiones y varios organizadores; se puede crear en borrad
 Relaciones:  
 Workshop  
 ├─ has_many → Sessions  
-├─ has_many → OrganizerAssignments  REVISAR, QUIZÁ SEA MEJOR QUE RELACIONE CON SESIOON
-└─ has_many → Discounts  REVISAR, QUIZZÁ SEA MEJOR QUE SER RELACIONE CON SESSION
 
 > Notas:
 > - La visibilidad operativa (borrador, publicado, lleno, etc.) vive en **Session**.  
@@ -186,6 +183,8 @@ Instancia **operativa** de un taller: cuándo y dónde sucede realmente.
 |--------|------|-------------|
 | **id** | UUID | Identificador |
 | **workshop_id** | FK(Workshop) | Taller al que pertenece (obligatorio) |
+| **discount_id** | FK(Discount) | Descuento que aplica a la sesión (opcional) |
+| **OrganizerAssignment_id** | FK(OrganizerAssignment) | Organizador del taller (obligatorio) |
 | **type** | enum(`'physical'`, `'online'`) | Modalidad concreta de la sesión |
 | **status** | enum(`'draft'`, `'announced'`, `'published'`, `'full'`, `'cancelled'`, `'postponed'`, `'completed'`, `'archived'`) | Estado operativo y visibilidad |
 | **starts_at** | datetime (nullable en `draft/announced`) | Inicio |
