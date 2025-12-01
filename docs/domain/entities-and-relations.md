@@ -308,8 +308,8 @@ Payment
 ## Resumen global de relaciones (pendiente de revisar)
 
 User N:M Role (vía UserRole)  
-User N:M Session (vía OrganizerAssignment, solo para users organizer)  
-User N:M Session (vía Registration, solo para users attendee) 
+User N:M Session (vía OrganizerAssignment, solo para users con role Organizer)  
+User N:M Session (vía Registration, solo para users con role Attendee) 
 
 Discount N:M Session (vía DiscountSession)  
 
