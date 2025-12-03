@@ -22,7 +22,7 @@ class Registration:
     created_at: datetime = field(default_factory=datetime.now)
     confirmation_date: datetime | None = None
 
-    def confirm(self):
+    def confirm(self) -> None:
 
         can_confirm = (
             self.status == RegistrationStatus.RESERVED
