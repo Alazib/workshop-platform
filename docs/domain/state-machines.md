@@ -124,8 +124,8 @@ quién puede realizar cada cambio y bajo qué condiciones.
 | Desde                | Hacia                    | Quién lo dispara        | Condición / Comentario |
 |----------------------|--------------------------|-------------------------|------------------------|
 | —                    | reserved                 | Organizador/Admin       | Reserva manual sin pago |
-| —                    | confirmed                | Sistema (tras pago)     | `charge/paid` que cubre `agreed_price` |
-| reserved             | confirmed                | Sistema (tras pago)     | Se completa el pago de una reserva |
+| —                    | confirmed                | Sistema (tras pago)     | Solo si `Payment.type = charge` y `Payment.status = paid` y `net_amount ≥ agreed_price` |
+| reserved             | confirmed                | Sistema (tras pago)     | Solo si `Payment.type = charge` y `Payment.status = paid` y `net_amount ≥ agreed_price` |
 | reserved             | cancelled_by_organizer   | Organizador/Admin       | Se libera la plaza reservada |
 | confirmed            | cancelled_by_user        | Usuario                 | Solicitud ≥ 7 días antes del inicio (con refund) |
 | confirmed            | cancelled_by_organizer   | Sistema/Organizador     | Sesión cancelada o inscripción anulada por organización |
