@@ -253,7 +253,7 @@ Sin esta llamada, la excepción saldría SIN mensaje.
 ## 5. ¿Por qué `InMemorySessionRepository` puede heredar o NO heredar del `Protocol`?
 
 Los repositorios *in-memory* son implementaciones “falsas” de los puertos del dominio.
-Simulan lo que haría la infraestructura real (base de datos, Django ORM), pero usando únicamente estructuras de datos de Python — normalmente diccionarios.
+Simulan lo que haría la infraestructura real (base de datos, Django ORM), pero usando únicamente estructuras de datos de Python — normalmente diccionarios. Sin servidor. Sin migraciones. Sin bases de datos. Sin modelos Django.
 
 Ejemplo conceptual:
 
@@ -270,8 +270,8 @@ Esto permite ejecutar casos de uso sin infraestructura, lo cual es ideal para te
 
 En arquitectura hexagonal:
 
-- El **dominio** depende de puertos (interfaces).
-- La **infraestructura** crea adaptadores que implementan esos puertos.
+- El **dominio** depende de puertos (interfaces) que no implementan métodos.
+- La **infraestructura** crea adaptadores que implementan esos puertos (implementan los métodos con infrastructura concreta: Django, HTTP, SQL, etc)
 
 Ejemplo:
 
@@ -291,6 +291,16 @@ Ambos ofrecen los mismos métodos:
 pero los ejecutan de forma diferente.
 
 El caso de uso no nota la diferencia porque solo depende del **puerto**, no de la implementación.
+
+
+| Infraestructura (real) | In-Memory (falso) |
+| ---------------------- | ----------------- |
+| Django ORM             | Diccionarios      |
+| SQL                    | Listas Python     |
+| Guardar modelo         | Guardar objeto    |
+| Búsqueda por ID        | Buscar en dict    |
+| Autoincrement ID       | Counter en Python |
+
 
 ---
 
