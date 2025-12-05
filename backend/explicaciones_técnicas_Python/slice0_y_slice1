@@ -252,53 +252,161 @@ Sin esta llamada, la excepción saldría SIN mensaje.
 
 ## 5. ¿Por qué `InMemorySessionRepository` puede heredar o NO heredar del `Protocol`?
 
-Ejemplo con herencia:
+Los repositorios *in-memory* son implementaciones “falsas” de los puertos del dominio.
+Simulan lo que haría la infraestructura real (base de datos, Django ORM), pero usando únicamente estructuras de datos de Python — normalmente diccionarios.
+
+Ejemplo conceptual:
+
+- `DjangoSessionRepository` → Adaptador REAL (usa la BD)
+- `InMemorySessionRepository` → Adaptador FALSO (usa un dict)
+
+Ambos cumplen el mismo **contrato** (`SessionRepository`), pero uno es real y otro es simulado.
+
+Esto permite ejecutar casos de uso sin infraestructura, lo cual es ideal para tests rápidos y para la arquitectura hexagonal.
+
+---
+
+### 5.1. ¿Por qué estos repos in-memory son adaptadores?
+
+En arquitectura hexagonal:
+
+- El **dominio** depende de puertos (interfaces).
+- La **infraestructura** crea adaptadores que implementan esos puertos.
+
+Ejemplo:
+
+    SessionRepository (puerto)
+         ▲
+         │
+    ┌────┴──────────────────────────────┐
+    │                                   │
+    DjangoSessionRepository       InMemorySessionRepository
+ (adaptador real, ORM)        (adaptador falso, tests / desarrollo)
+
+Ambos ofrecen los mismos métodos:
+
+- `get_session_by_id`
+- `save_session`
+
+pero los ejecutan de forma diferente.
+
+El caso de uso no nota la diferencia porque solo depende del **puerto**, no de la implementación.
+
+---
+
+### 5.2. Con `Protocol` NO ES NECESARIO heredar del puerto
+
+El `Protocol` define una interfaz estructural:
+
+> “Si una clase tiene estos métodos con estas firmas, ya cumple el contrato”.
+
+Eso significa que esta clase:
+
+    class InMemorySessionRepository:
+        def get_session_by_id(self, session_id):
+            ...
+        def save_session(self, session):
+            ...
+
+YA cumple el contrato del protocolo **sin heredar nada**.
+
+Python no exige herencia explícita como Java, C# o PHP.
+Solo exige que la clase **tenga los métodos adecuados**.
+
+Este mecanismo se llama **typing estructural** o “duck typing tipado”:
+
+> Si camina como un pato y hace cuac como un pato, es un pato.
+
+---
+
+### 5.3. Entonces, ¿por qué A VECES heredamos del protocolo?
+
+Principalmente por **intención y claridad visual**.
+
+Ejemplo:
 
     class InMemorySessionRepository(SessionRepository):
         ...
 
-Ejemplo sin herencia:
+Esto le dice al lector:
+
+> “Esta clase implementa explícitamente el puerto `SessionRepository`.”
+
+No cambia el comportamiento, no añade métodos, no ejecuta lógica del padre.
+Solo sirve como **declaración de intención**.
+
+Además:
+
+- Ayuda a herramientas estáticas (mypy, pyright) a detectar errores de firma.
+- Hace más evidente la relación adaptador → puerto.
+
+Pero **NO ES OBLIGATORIO**.
+
+---
+
+### 5.4. ¿Qué pasa si no heredo?
+
+Respuesta: **Nada. Funciona igual.**
 
     class InMemorySessionRepository:
-        def get_session_by_id(...):
-        def save_session(...):
+        def get_session_by_id(self, session_id):
+            ...
+        def save_session(self, session):
+            ...
 
-### 5.1. Con Protocol **NO ES NECESARIO HEREDAR**
-
-La herencia NO aporta funcionalidad.
-El `Protocol` solo define un **contrato estructural**:
-
-> “Si tienes los métodos necesarios, eres válido.”
-
-Por tanto, esto funciona igual:
+El caso de uso podrá recibir esta clase exactamente igual:
 
     repo = InMemorySessionRepository()
+    use_case = RegisterToSessionUseCase(repo, ...)
 
-Aunque no herede de nada.
+Porque cumple el contrato del protocolo al tener los métodos adecuados.
 
-### 5.2. ¿Qué aporta heredar explícitamente?
+---
 
-Solo **intención y documentación**:
+### 5.5. Comparación visual: herencia vs no herencia
 
-- El desarrollador leyendo el código entiende: “esta clase implementa el puerto”.
-- Algunas herramientas de análisis estático (mypy) pueden ser más estrictas y detectar errores antes.
+**Con herencia (explícito, más declarativo):**
 
-### 5.3. ¿Qué pasa si NO heredas?
+    class InMemorySessionRepository(SessionRepository):
+        def get_session_by_id(self, session_id):
+            return self._sessions.get(session_id)
 
-**Nada.**
-Es totalmente válido, porque Python usa **typing estructural**:
+        def save_session(self, session):
+            self._sessions[session.id] = session
 
-- Si la clase tiene los métodos → cumple el protocolo.
-- La herencia NO es obligatoria como en Java o C#.
+**Sin herencia (más “pythónico”, más flexible):**
 
-### 5.4. Metáfora clara
-Un `Protocol` es un “contrato en PDF”.
-Tu clase puede:
+    class InMemorySessionRepository:
+        def get_session_by_id(self, session_id):
+            return self._sessions.get(session_id)
 
-- Poner un sello diciendo “yo implemento este contrato” → heredar
-- O simplemente cumplir el contrato sin decirlo → no heredar
+        def save_session(self, session):
+            self._sessions[session.id] = session
 
-Ambas opciones son válidas.
+Ambas versiones son 100% válidas.
+La herencia solo cambia **cómo se lee el código**, no cómo funciona.
+
+---
+
+### 5.6. Metáfora clara
+
+Un `Protocol` es como una **carta de requisitos** que dice:
+
+- Debe tener método A.
+- Debe tener método B.
+
+Para cumplirla, puedes:
+
+1. **Firmar la carta (heredar del protocolo)**
+   → Más explícito, más formal.
+
+2. **Cumplir la carta sin firmarla (no heredar)**
+   → Python lo permite, mientras tengas los métodos adecuados.
+
+Ambas formas son válidas.
+La elección depende de estilo y claridad.
+
+
 
 ---
 
