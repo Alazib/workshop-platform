@@ -1,8 +1,6 @@
 # Notas técnicas — Slice 0 y Slice 1
 
-Este documento recopila explicaciones técnicas clave que han ido apareciendo en los Slices 0 y 1 del backend: el uso de default_factory, `@dataclass` vs `__init__`, `Protocol`, errores de dominio y herencia vs no herencia en repositorios in-memory.
-
----
+Este documento recopila explicaciones técnicas clave que han ido apareciendo en los Slices 0 y 1 del backend.
 
 ## 1. `default_factory` vs valores por defecto normales
 
