@@ -1,6 +1,7 @@
 from domain.ports.registration_repository import RegistrationRepository
 from domain.ports.session_repository import SessionRepository
 from domain.entities.registration import Registration, RegistrationStatus
+from domain.exceptions import SessionNotFound, SessionNotOpenForRegistration
 
 
 class RegisterToSessionUseCase:
@@ -13,11 +14,10 @@ class RegisterToSessionUseCase:
     def execute(self, session_id: int, user_id: int) -> Registration:
         session = self.session_repo.get_session_by_id(session_id)
         if session is None:
-            raise ValueError("Sesión no encontrada")
+            raise SessionNotFound(session_id)
 
         if not session.can_accept_registrations():
-            raise ValueError("La sesión no acepta inscripciones")
-
+            raise SessionNotOpenForRegistration(session_id)
         registration = Registration(
             id=0,
             session_id=session.id,
