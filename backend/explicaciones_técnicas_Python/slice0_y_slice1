@@ -1,8 +1,6 @@
 # Notas técnicas — Slice 0 y Slice 1
 
-
-
-Este documento recopila explicaciones técnicas clave que han ido apareciendo en los Slices 0 y 1 del backend: el uso de default_factory, `@dataclass` vs `__init__`, y `Protocol`
+Este documento recopila explicaciones técnicas clave que han ido apareciendo en los Slices 0 y 1 del backend: el uso de default_factory, `@dataclass` vs `__init__`, `Protocol`, errores de dominio y herencia vs no herencia en repositorios in-memory.
 
 ---
 
@@ -45,8 +43,6 @@ En cambio, cuando escribes:
 
 ### 1.2. Ejemplo para ver el problema
 
-Imagina este código:
-
     @dataclass
     class A:
         created_at: datetime = datetime.now()
@@ -85,8 +81,6 @@ Ejemplos correctos:
         created_at: datetime = field(default_factory=datetime.now)
         items: list[int] = field(default_factory=list)
 
-Esto asegura que cada instancia tenga su propia fecha de creación y su propia lista.
-
 ### 1.4. ¿Por qué `None` NO usa `default_factory`?
 
 `None` es:
@@ -95,21 +89,20 @@ Esto asegura que cada instancia tenga su propia fecha de creación y su propia l
 - Inmutable
 - No es una llamada a función
 
-No necesitamos “fabricar” un `None` distinto por instancia. Simplemente queremos decir: “si no especifico nada, el valor es `None`”.
+No necesitamos “fabricar” un `None` distinto por instancia.
+Simplemente queremos decir: “si no especifico nada, el valor es `None`”.
 
 Por eso, escribir:
 
     confirmation_date: datetime | None = None
 
-es totalmente correcto y suficiente.
+es totalmente correcto.
 
 En cambio, esto:
 
     confirmation_date: datetime | None = field(default_factory=None)
 
-sería incorrecto, porque `default_factory` espera **algo que se pueda llamar como una función** (`callable`), y `None` no lo es. Intentar usarlo daría un error de tipo:
-
-- `'NoneType' object is not callable`.
+sería incorrecto, porque `default_factory` espera **algo que se pueda llamar como una función** (`callable`).
 
 ---
 
@@ -117,223 +110,204 @@ sería incorrecto, porque `default_factory` espera **algo que se pueda llamar co
 
 ### 2.1. Entidades de dominio: son datos + reglas
 
-Una entidad del dominio, como `Session` o `Registration`, representa algo **del negocio**:
-
     @dataclass
     class Session:
         id: int
         workshop_id: int
-        title: str
-        starts_at: datetime
-        ends_at: datetime
-        capacity_max: int
-        state: SessionState
-
+        ...
         def can_accept_registrations(self) -> bool:
             return self.state == SessionState.PUBLISHED
 
-Características de una entidad de dominio:
+Características:
 
-- Tiene **datos** (atributos) que describen un concepto del negocio.
-- Puede tener **métodos** que aplican reglas de negocio a esos datos.
-- No suele tener dependencias externas (no tiene repositorios dentro).
-- Es natural querer:
-  - Imprimirla para depurar.
-  - Compararla (a veces).
-  - Serializarla.
+- Representan **conceptos del negocio**.
+- Tienen **datos** y **reglas de negocio**.
+- No tienen dependencias externas.
+- Son objetos “puros” del dominio.
 
-`@dataclass` está diseñado precisamente para este tipo de clases:
+`@dataclass` genera:
 
-- Genera automáticamente:
-  - `__init__` con todos los campos.
-  - `__repr__` legible.
-  - `__eq__` (opcionalmente, comparaciones).
+- `__init__`
+- `__repr__`
+- `__eq__`
+- Manejo automático de los atributos
 
-Te ahorra boilerplate y te permite centrarte en las reglas de negocio, no en la “fontanería” del constructor.
+Ahorran mucha “fontanería”.
 
-### 2.2. Casos de uso: son servicios, no datos
-
-Un caso de uso como `RegisterToSessionUseCase` **no representa un dato**, sino una **acción** del sistema:
+### 2.2. Casos de uso: NO son datos
 
     class RegisterToSessionUseCase:
-        def __init__(
-            self,
-            session_repo: SessionRepository,
-            registration_repo: RegistrationRepository,
-        ) -> None:
-            self.session_repo = session_repo
-            self.registration_repo = registration_repo
-
-        def execute(self, session_id: int, user_id: int) -> Registration:
+        def __init__(self, session_repo, registration_repo):
             ...
 
-Características de un caso de uso:
+Características:
 
-- Coordina pasos de aplicación:
-  - Leer datos de repositorios.
-  - Llamar a métodos del dominio.
-  - Guardar cambios.
-- Recibe **dependencias externas** (repositorios, servicios), no datos del negocio.
-- No es un “objeto del dominio” que haya que almacenar, comparar o serializar.
-- Es un **servicio de aplicación**, no una entidad.
+- Son **servicios de aplicación**, no datos.
+- Coordinan pasos (leer repos, aplicar reglas, guardar cambios).
+- Tienen **dependencias externas** (repositorios).
+- NO representan un concepto del dominio.
 
-Por eso **NO** usamos `@dataclass` aquí:
+Por eso **NO deben usar `@dataclass`**:
+no queremos que se traten como “datos”, porque no lo son.
 
-- No queremos que genere `__eq__`, `__repr__`, etc. para un servicio.
-- No queremos tratar un caso de uso como un “dato” con atributos semánticos del negocio.
-- Lo que tiene son **dependencias**, no “campos de dominio”.
-
-### 2.3. Metáfora
-
-- Una **entidad** es como una ficha de ajedrez: tiene color, tipo, posición.
-- Un **caso de uso** es como “el turno del jugador”: qué pieza mueve, cuándo, con qué reglas.
-
-Tiene sentido usar `@dataclass` para representar fichas (datos).
-No tiene sentido usar `@dataclass` para representar “un turno” o “una jugada” como objeto de datos permanente.
+Metáfora:
+Una entidad es una **ficha de ajedrez**.
+Un caso de uso es el **turno del jugador**: no se debe tratar como un objeto “almacenable”.
 
 ---
 
 ## 3. ¿Por qué usamos `Protocol` para los repositorios?
 
-En el dominio definimos puertos (interfaces) para que el caso de uso hable con la infraestructura sin conocer detalles de Django ni de la base de datos.
-
 Ejemplo:
 
-    from typing import Optional, Protocol
-    from domain.entities.session import Session
-
     class SessionRepository(Protocol):
-        def get_session_by_id(self, session_id: int) -> Optional[Session]:
-            ...
+        def get_session_by_id(self, session_id: int): ...
+        def save_session(self, session: Session): ...
 
-        def save_session(self, session: Session) -> None:
-            ...
+`Protocol` define un **contrato**:
 
-### 3.1. ¿Qué es un `Protocol`?
+> “Cualquier clase que tenga estos métodos es válida como SessionRepository.”
 
-Un `Protocol` es una forma de decir:
+Esto permite:
 
-> “Cualquier clase que tenga estos métodos, con estas firmas, se considera un `SessionRepository`.”
+- Independizar el dominio del framework (Django, SQLAlchemy…).
+- Probar con repositorios **in-memory** sin necesidad de base de datos.
+- Sustituir infraestructura sin tocar el caso de uso.
+- Aplicar arquitectura hexagonal de verdad.
 
-Es lo que se llama **typing estructural**:
+### Typing estructural
+Python no mira herencia, mira **forma**:
 
-- No importa de qué clase hereda.
-- Importa que **“se comporte”** como un repositorio (que tenga esos métodos).
+    if la clase tiene los métodos → sirve
 
-Es la versión tipada del famoso “duck typing” de Python:
-
-- “Si parece un pato, nada como un pato y hace cuac, es un pato.”
-
-### 3.2. Qué gana el dominio con `Protocol`
-
-En el caso de uso:
-
-    class RegisterToSessionUseCase:
-        def __init__(
-            self,
-            session_repo: SessionRepository,
-            registration_repo: RegistrationRepository,
-        ) -> None:
-            self.session_repo = session_repo
-            self.registration_repo = registration_repo
-
-        def execute(self, session_id: int, user_id: int) -> Registration:
-            session = self.session_repo.get_session_by_id(session_id)
-            ...
-
-El caso de uso solo sabe que:
-
-- `session_repo` tiene un método `get_session_by_id`.
-- `registration_repo` tiene un método `save_registration`, etc.
-
-No sabe:
-
-- Si por detrás hay Django ORM.
-- Si hay una lista en memoria (para tests).
-- Si hay una API externa.
-
-Eso permite:
-
-- Probar el caso de uso con repositorios **in-memory** (sin base de datos, sin Django).
-- Cambiar la implementación de los repositorios sin tocar el caso de uso.
-- Cumplir la idea de “puertos y adaptadores” de la arquitectura hexagonal.
-
-### 3.3. Ejemplo de uso con dos implementaciones
-
-1. **Implementación en memoria (para tests)**
-
-    class InMemorySessionRepository:
-        def __init__(self) -> None:
-            self.sessions: dict[int, Session] = {}
-
-        def get_session_by_id(self, session_id: int) -> Optional[Session]:
-            return self.sessions.get(session_id)
-
-        def save_session(self, session: Session) -> None:
-            self.sessions[session.id] = session
-
-2. **Implementación con Django ORM**
-
-    class DjangoSessionRepository:
-        def get_session_by_id(self, session_id: int) -> Optional[Session]:
-            try:
-                model = SessionModel.objects.get(id=session_id)
-            except SessionModel.DoesNotExist:
-                return None
-            return model.to_domain()
-
-        def save_session(self, session: Session) -> None:
-            model = SessionModel.from_domain(session)
-            model.save()
-
-Ambas clases:
-
-- No heredan explícitamente de `SessionRepository`.
-- Pero **cumplen el protocolo** (tienen los métodos correctos).
-
-Entonces, el caso de uso las puede recibir sin importarlas:
-
-    # en tests
-    repo = InMemorySessionRepository()
-
-    # en producción con Django
-    repo = DjangoSessionRepository()
-
-En ambos casos:
-
-    use_case = RegisterToSessionUseCase(
-        session_repo=repo,
-        registration_repo=another_repo,
-    )
-
-El caso de uso funciona igual, sin cambiar su código.
-
-### 3.4. ¿Por qué no usamos directamente clases abstractas (`ABC`)?
-
-Se podría usar `ABC` con `@abstractmethod`, pero:
-
-- `Protocol` es más flexible:
-  - No obliga a heredar explícitamente.
-  - Encaja mejor con el estilo “duck typing” de Python.
-- Para DDD/hexagonal en Python, los `Protocol` son una forma muy cómoda de expresar **interfaces de dominio**.
+Por eso, incluso si NO heredas, el caso de uso lo acepta.
 
 ---
 
-## 4. Resumen rápido para repaso
+## 4. Errores de dominio personalizados y `DomainError`
 
-- **`default_factory`**
-  - Úsalo cuando el valor por defecto es dinámico o mutable:
-    - `field(default_factory=datetime.now)`
-    - `field(default_factory=list)`
-  - No lo uses para literales fijos como `None`, `0`, `True`, `"texto"`.
+En vez de usar errores genéricos (`ValueError`, `Exception`), el dominio define **sus propios errores**:
 
-- **`@dataclass`**
-  - Úsalo para entidades de dominio (datos + reglas).
-  - No lo uses para casos de uso ni servicios (no representan datos, sino acciones).
-  - Te ahorra escribir `__init__` y otros métodos estándar.
+    class DomainError(Exception):
+        pass
 
-- **`Protocol`**
-  - Se usa para definir contratos (puertos) que otras clases deben cumplir.
-  - Permite que el dominio dependa de “interfaces” en lugar de implementaciones concretas.
-  - Facilita la prueba del dominio con repositorios falsos y la sustitución de la infraestructura sin tocar el caso de uso.
+A primera vista parece inútil, pero es una **pieza clave**:
+
+### 4.1. Es una “familia” de errores
+Todas las excepciones del dominio heredan de esta clase:
+
+    class SessionNotFound(DomainError): ...
+    class SessionNotOpenForRegistration(DomainError): ...
+    class SessionFull(DomainError): ...
+
+Esto permite capturarlas TODAS en una sola instrucción:
+
+    try:
+        use_case.execute(...)
+    except DomainError as e:
+        return Response({"error": str(e)}, status=400)
+
+### 4.2. ¿Por qué heredar si está vacía?
+
+Porque **representa un tipo**, no una funcionalidad.
+
+Metáfora:
+Es el “apellido común” de todos los errores del dominio.
+Si todos se apellidan *DomainError*, puedes filtrarlos juntos.
+
+### 4.3. ¿Por qué pasamos argumentos a las excepciones?
+
+Por ejemplo:
+
+    raise SessionNotFound(session_id)
+
+La clase recibe el ID para:
+
+- construir un mensaje claro
+- guardarlo internamente
+- facilitar logs, debugging y respuestas HTTP
+
+Ejemplo:
+
+    class SessionNotFound(DomainError):
+        def __init__(self, session_id):
+            message = f"La sesión {session_id} no existe."
+            super().__init__(message)
+            self.session_id = session_id
+
+Cuando haces:
+
+    except SessionNotFound as e:
+        e.session_id  # contiene el ID que falló
+
+### 4.4. ¿Por qué usamos super().__init__(message)?
+
+- Llama al constructor del padre (`Exception`)
+- Registra el mensaje internamente
+- Permite que `str(e)` muestre el mensaje
+
+Sin esta llamada, la excepción saldría SIN mensaje.
+
+---
+
+## 5. ¿Por qué `InMemorySessionRepository` puede heredar o NO heredar del `Protocol`?
+
+Ejemplo con herencia:
+
+    class InMemorySessionRepository(SessionRepository):
+        ...
+
+Ejemplo sin herencia:
+
+    class InMemorySessionRepository:
+        def get_session_by_id(...):
+        def save_session(...):
+
+### 5.1. Con Protocol **NO ES NECESARIO HEREDAR**
+
+La herencia NO aporta funcionalidad.
+El `Protocol` solo define un **contrato estructural**:
+
+> “Si tienes los métodos necesarios, eres válido.”
+
+Por tanto, esto funciona igual:
+
+    repo = InMemorySessionRepository()
+
+Aunque no herede de nada.
+
+### 5.2. ¿Qué aporta heredar explícitamente?
+
+Solo **intención y documentación**:
+
+- El desarrollador leyendo el código entiende: “esta clase implementa el puerto”.
+- Algunas herramientas de análisis estático (mypy) pueden ser más estrictas y detectar errores antes.
+
+### 5.3. ¿Qué pasa si NO heredas?
+
+**Nada.**
+Es totalmente válido, porque Python usa **typing estructural**:
+
+- Si la clase tiene los métodos → cumple el protocolo.
+- La herencia NO es obligatoria como en Java o C#.
+
+### 5.4. Metáfora clara
+Un `Protocol` es un “contrato en PDF”.
+Tu clase puede:
+
+- Poner un sello diciendo “yo implemento este contrato” → heredar
+- O simplemente cumplir el contrato sin decirlo → no heredar
+
+Ambas opciones son válidas.
+
+---
+
+## 6. Resumen rápido para repaso
+
+- **`default_factory`** → para valores dinámicos o mutables.
+- **`@dataclass`** → para entidades (datos + reglas), NO para casos de uso.
+- **`Protocol`** → define contratos; heredar es opcional.
+- **`DomainError`** → clase base para capturar todos los errores del dominio.
+- **Excepciones personalizadas** → transmiten contexto claro (session_id, etc.).
+- **Repos in-memory** → funcionan aunque NO hereden del protocolo.
 
