@@ -260,6 +260,9 @@ Un repositorio es un objeto que desde el dominio parece ser una colección de en
 pero cuyo contenido, en realidad, se está guardando en un almacenamiento externo (BD, API, ficheros...) pues está operando en
 la infraestructura: ejecutar SQL, guardar un modelo Django, llamar una API, escribir un fichero, etc.
 
+Los repositorios, normalmente, sólo tienen métodos. Dichos métodos serán operaciones de lectura/escritura sobre una colección
+del dominio (get, lis_all, save, delete, etc). Los repositorios *in-memory* sí pueden tener atributos (dicionarios que simular una BD, contadores, etc)
+
 Los repositorios *in-memory* son implementaciones “falsas” de los puertos del dominio.
 Simulan lo que haría la infraestructura real (base de datos, Django ORM), pero usando únicamente estructuras de datos de Python — normalmente diccionarios. Sin servidor. Sin migraciones. Sin bases de datos. Sin modelos Django.
 
@@ -392,7 +395,7 @@ Porque cumple el contrato del protocolo al tener los métodos adecuados.
         def save_session(self, session):
             self._sessions[session.id] = session
 
-**Sin herencia (más “pythónico”, más flexible):**
+**Sin herencia (más estilo Python, más flexible):**
 
     class InMemorySessionRepository:
         def get_session_by_id(self, session_id):
@@ -404,9 +407,7 @@ Porque cumple el contrato del protocolo al tener los métodos adecuados.
 Ambas versiones son 100% válidas.
 La herencia solo cambia **cómo se lee el código**, no cómo funciona.
 
----
 
-### 5.6. Metáfora clara
 
 Un `Protocol` es como una **carta de requisitos** que dice:
 
