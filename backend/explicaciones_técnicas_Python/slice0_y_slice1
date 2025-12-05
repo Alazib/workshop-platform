@@ -250,7 +250,15 @@ Sin esta llamada, la excepción saldría SIN mensaje.
 
 ---
 
-## 5. ¿Por qué `InMemorySessionRepository` puede heredar o NO heredar del `Protocol`?
+## 5. ¿Qué son los repositorios In Memory y por qué `InMemorySessionRepository` puede heredar o NO heredar del `Protocol`?
+
+Un repositorio es un objeto que desde el dominio parece ser una colección de entidades (sesiones, registros, etc):
+
+    session = session_repo.get_session_by_id(1)
+    session_repo.save_session(session)
+
+pero cuyo contenido, en realidad, se está guardando en un almacenamiento externo (BD, API, ficheros...) pues está operando en
+la infraestructura: ejecutar SQL, guardar un modelo Django, llamar una API, escribir un fichero, etc.
 
 Los repositorios *in-memory* son implementaciones “falsas” de los puertos del dominio.
 Simulan lo que haría la infraestructura real (base de datos, Django ORM), pero usando únicamente estructuras de datos de Python — normalmente diccionarios. Sin servidor. Sin migraciones. Sin bases de datos. Sin modelos Django.
@@ -304,7 +312,7 @@ El caso de uso no nota la diferencia porque solo depende del **puerto**, no de l
 
 ---
 
-### 5.2. Con `Protocol` NO ES NECESARIO heredar del puerto
+### 5.2. Con `Protocol` el adaptador NO necesita heredar del puerto
 
 El `Protocol` define una interfaz estructural:
 
