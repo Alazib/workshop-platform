@@ -4,6 +4,12 @@ from domain.entities.registration import Registration, RegistrationStatus
 from domain.exceptions import SessionNotFound, SessionNotOpenForRegistration
 
 
+"""
+NOTA: Ver punto 4 en "technical_notes/slice0_y_slice1"
+
+"""
+
+
 class RegisterToSessionUseCase:
     def __init__(
         self, session_repo: SessionRepository, registration_repo: RegistrationRepository

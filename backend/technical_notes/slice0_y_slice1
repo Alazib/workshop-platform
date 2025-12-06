@@ -156,7 +156,29 @@ Un caso de uso es el **turno del jugador**: no se debe tratar como un objeto “
 
 ## 3. ¿Por qué usamos `Protocol` para los repositorios?
 
-Ejemplo:
+        class RegisterToSessionUseCase:
+    def __init__(
+        self, session_repo: SessionRepository, registration_repo: RegistrationRepository
+    ) -> None:
+        self.session_repo = session_repo
+        self.registration_repo = registration_repo
+
+    def execute(self, session_id: int, user_id: int) -> Registration:
+        session = self.session_repo.get_session_by_id(session_id)
+        if session is None:
+            raise SessionNotFound(session_id)
+
+            ETC
+            ETC
+
+Al caso de uso le paso en el constructor los objetos: "sesion_repo" del tipo "SessionRepository" y "registration_repo" del tipo "RegistrationRepository". Estos dos tipos (que a su vez son interfaces)
+heredaron de "Protocol" (tienen tipado estructural, basado en la forma de los objetos. Diferente a la clásica herencia nominal). Esto quiere decir que, por ejemplo, la interfaz "SessionRepository" dice:
+cualquier cosa que tenga mis métodos (mi estructura) es de mi mismo tipo. Por tanto, cualquier objeto "session_repo" que tenga los dos métodos de "SessionRepository" sera reconocido como tal tipo.
+De esta manera podemos pasar, por ejemplo, un DjangoSessionRepository con los métodos de SessionRepository pero ya implementados en una tecnología concreta. De este modo, mantemos el caso de uso
+agnóstico de cualquier tecnología (pues SessionRepository solo tiene el nombre de los métodos pero están vacíos, sin implementar) y DjangoSessionRepository (o cualquier otro repositorio de la capa
+de infrastructura) traerá los mismos métodos pero ya implementados.
+
+
 
     class SessionRepository(Protocol):
         def get_session_by_id(self, session_id: int): ...
@@ -176,7 +198,7 @@ Esto permite:
 ### Typing estructural
 Python no mira herencia, mira **forma**:
 
-    if la clase tiene los métodos → sirve
+    si la clase tiene los mismos métodos → sirve
 
 Por eso, incluso si NO heredas, el caso de uso lo acepta.
 

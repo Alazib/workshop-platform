@@ -2,8 +2,9 @@ from typing import Optional
 from domain.entities.registration import Registration
 from domain.ports.registration_repository import RegistrationRepository
 
+
 """
-NOTA: Ver punto 5 en "explicaciones_tecnicas_python/slice0_y_slice1"
+NOTA: Ver punto 5 en ""technical_notes/slice0_y_slice1"
 """
 
 
