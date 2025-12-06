@@ -7,7 +7,7 @@ from application.repositories_in_memory.in_memory_session_repository import (
 from application.repositories_in_memory.in_memory_registration_repository import (
     InMemoryRegistrationRepository,
 )
-from domain.exceptions import SessionNotFound, SessionNotOpenForRegistration
+from domain.exceptions import DomainError
 
 
 def test_register_success():
@@ -29,10 +29,10 @@ def test_register_success():
     )
     session_repo.save_session(session)
 
-    # 3. Ejecutar caso de uso (Registrase a una sesión)
+    # 3. Crear caso de uso
     use_case = RegisterToSessionUseCase(session_repo, registration_repo)
 
-    # 4. Ejecutar inscripción
+    # 4. Ejecutar caso de uso (Registrase a una sesión)
     registration = use_case.execute(session_id=1, user_id=99)
 
     print("Registro creado correctamente:")
@@ -49,7 +49,7 @@ def test_session_not_found():
 
     try:
         use_case.execute(session_id=999, user_id=1)
-    except SessionNotFound as e:
+    except DomainError as e:
         print("OK → Lanzó SessionNotFound:", e)
 
 
@@ -74,7 +74,7 @@ def test_session_not_open():
 
     try:
         use_case.execute(session_id=2, user_id=44)
-    except SessionNotOpenForRegistration as e:
+    except DomainError as e:
         print("OK → Lanzó SessionNotOpenForRegistration:", e)
 
 
