@@ -28,7 +28,7 @@ Enfoque incremental basado en MVP + iteraciones.
 
 ---
 
-# 🏗️ Fase 0 — Preparación y gobernanza  
+# 🏗️ Fase 0 — Preparación y gobernanza
 **Estado:** Completada parcialmente
 
 **Objetivo:** Crear el esqueleto del proyecto y la documentación inicial.
@@ -44,7 +44,7 @@ Enfoque incremental basado en MVP + iteraciones.
 
 ---
 
-# 🧩 Fase 1 — Modelado del dominio  
+# 🧩 Fase 1 — Modelado del dominio
 **Estado:** COMPLETADA
 
 **Objetivo:** Cerrar las reglas de negocio y dejar el dominio “blindado”.
@@ -65,7 +65,7 @@ Enfoque incremental basado en MVP + iteraciones.
 
 ---
 
-# ⚙️ Fase 2 — Arquitectura + MVP Backend  
+# ⚙️ Fase 2 — Arquitectura + MVP Backend
 **Estado:** EN PROGRESO
 
 **Objetivo:** Construir el backend mínimo funcional usando arquitectura hexagonal + Django.
@@ -98,7 +98,7 @@ A partir de este punto, **todo el desarrollo será por vertical slices**, no por
 
 # 🧗‍♂️ Fase 3 — Iteraciones del backend (vertical slices)
 
-**Objetivo:** Añadir funcionalidades incrementales al backend *uno por uno*, cada una como un slice vertical:
+**Objetivo:** Añadir funcionalidades incrementales al backend *uno por uno*, cada una como un slice vertical. También "endurecer" el admin para que esté alineado con el dominio y no pueda saltarse las reglas de negocio.
 
 Cada slice incluye:
 - Dominio (si afecta)
@@ -119,13 +119,14 @@ Cada slice incluye:
 8. Reporting básico para admin
 9. Notificaciones (email)
 10. Exportaciones CSV/Excel
+11. Alinear admin con el domino (¿en última posición? Revisar el orden)
 
-**Nota:**  
+**Nota:**
 Cada slice produce una funcionalidad lista para demostración.
 
 ---
 
-# 🎨 Fase 4 — Frontend (React + TypeScript)  
+# 🎨 Fase 4 — Frontend (React + TypeScript)
 **Objetivo:** Crear la interfaz conectada al backend, también por slices.
 
 ## Slices frontend propuestos:
@@ -142,7 +143,7 @@ Cada slice produce una funcionalidad lista para demostración.
 
 ---
 
-# 💳 Fase 5 — Pagos reales y notificaciones  
+# 💳 Fase 5 — Pagos reales y notificaciones
 **Objetivo:** Llevar el proyecto a un nivel profesional incorporando pagos reales y comunicaciones.
 
 **Tareas:**
@@ -155,7 +156,7 @@ Cada slice produce una funcionalidad lista para demostración.
 
 ---
 
-# 🔍 Fase 6 — Observabilidad  
+# 🔍 Fase 6 — Observabilidad
 **Objetivo:** Mejorar calidad operacional.
 
 **Tareas:**
@@ -167,7 +168,7 @@ Cada slice produce una funcionalidad lista para demostración.
 
 ---
 
-# 🚀 Fase 7 — CI/CD y despliegue  
+# 🚀 Fase 7 — CI/CD y despliegue
 **Objetivo:** Pipeline profesional y despliegue automatizado.
 
 **Tareas:**
@@ -178,7 +179,7 @@ Cada slice produce una funcionalidad lista para demostración.
 
 ---
 
-# 📚 Fase 8 — Documentación profesional + Portfolio final  
+# 📚 Fase 8 — Documentación profesional + Portfolio final
 **Objetivo:** Preparar la documentación para publicación profesional.
 
 **Tareas:**
