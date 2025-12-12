@@ -47,7 +47,7 @@ class SessionModel(models.Model):
 class RegistrationModel(models.Model):
 
     # Relación con SessionModel (clave foránea en Django)
-    session_id = models.ForeignKey(
+    session = models.ForeignKey(
         "django_app.SessionModel",
         on_delete=models.CASCADE,
         related_name="registrations",
