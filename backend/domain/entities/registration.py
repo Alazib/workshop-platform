@@ -15,7 +15,7 @@ class RegistrationStatus(Enum):
 
 @dataclass
 class Registration:
-    id: int
+    id: int | None
     session_id: int
     user_id: int
     status: RegistrationStatus

@@ -18,8 +18,8 @@ class InMemoryRegistrationRepository(RegistrationRepository):
         return self._registrations.get(registration_id)
 
     def save_registration(self, registration: Registration) -> None:
-        # Si viene con id=0 (nuevo), le damos uno "real"
-        if registration.id == 0:
+        # Si viene con id= None (nuevo), le damos uno "real"
+        if registration.id is None:
             registration.id = self._counter
             self._counter += 1
 

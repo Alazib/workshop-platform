@@ -25,7 +25,7 @@ class RegisterToSessionUseCase:
         if not session.can_accept_registrations():
             raise SessionNotOpenForRegistration(session_id)
         registration = Registration(
-            id=0,
+            id=None,
             session_id=session.id,
             user_id=user_id,
             status=RegistrationStatus.PENDING,
