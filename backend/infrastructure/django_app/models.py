@@ -4,7 +4,8 @@ from django.db import models
 class SessionModel(models.Model):
 
     # Se opta por no declarar los "id" en los modelos pues Django lo añade automáticamente:
-    # id = AutoField(primary_key=True)
+    # id = AutoField(primary_key=True) --> La BBDD crea el id automáticamente al insertar la fila y Django añade
+    # el campo 'id' al objeto con el valor dado por la BBDD
 
     workshop_id = models.IntegerField()
     title = models.CharField(max_length=200)
