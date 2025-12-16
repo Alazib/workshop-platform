@@ -1,4 +1,4 @@
-# 📁 Estructura completa del backend  
+# 📁 Estructura completa del backend
 ## Arquitectura Hexagonal + Django
 
 ```text
@@ -7,7 +7,7 @@ backend/
 ├── Pipfile.lock
 ├── manage.py
 │
-├── config/                         # 0 · Proyecto Django (configuración del framework)
+├── config/                         # 0 · Proyecto Django (configuración del framework para la infrastructura)
 │   ├── __init__.py
 │   ├── settings.py
 │   ├── urls.py

@@ -58,9 +58,9 @@ Enfoque incremental basado en MVP + iteraciones.
 - ADRs principales del dominio.
 
 **Entregables:**
-- `/docs/domain/roles-and-stories.md`
-- `/docs/domain/entities-and-relations.md`
-- `/docs/domain/state-machines.md`
+- `/docs/domain/roles e historias.md`
+- `/docs/domain/entidades y relaciones.md`
+- `/docs/domain/máquinas de estado.md`
 - ADR 0004, 0005, 0007, 0008
 
 ---
@@ -68,7 +68,12 @@ Enfoque incremental basado en MVP + iteraciones.
 # ⚙️ Fase 2 — Arquitectura + MVP Backend
 **Estado:** EN PROGRESO
 
-**Objetivo:** Construir el backend mínimo funcional usando arquitectura hexagonal + Django.
+**Objetivos:**
+
+1) Construir el backend mínimo funcional usando arquitectura hexagonal + Django.
+
+2) Crear el "core workflow" del MVP: Inscripción → Pago simulado → Confirmación → Cancelación → Listado
+
 
 Este MVP debe permitir:
 - Ver sesiones publicadas
@@ -92,7 +97,7 @@ La arquitectura ya está definida en los ADR:
 - Documentación actualizada
 
 **Importante:**
-A partir de este punto, **todo el desarrollo será por vertical slices**, no por capas completas.
+**Todo el desarrollo será por vertical slices**, no por capas completas.
 
 ---
 
