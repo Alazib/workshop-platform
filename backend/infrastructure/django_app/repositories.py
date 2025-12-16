@@ -1,7 +1,13 @@
 from typing import Optional
+
 from domain.entities.session import Session, SessionStatus
+from domain.entities.registration import Registration, RegistrationStatus
+
 from domain.ports.session_repository import SessionRepository
+from domain.ports.registration_repository import RegistrationRepository
+
 from .models import SessionModel
+from .models import RegistrationModel
 
 """
 NOTA: Ver punto 6 en "technical_notes/slice0_y_slice1"
@@ -10,13 +16,6 @@ NOTA: Ver punto 6 en "technical_notes/slice0_y_slice1"
 
 
 class DjangoSessionRepository(SessionRepository):
-    """
-    Adaptador Django del puerto SessionRepository.
-
-    Traduce entre:
-    - SessionModel (ORM / infraestructura)
-    - Session (entidad de dominio)
-    """
 
     def get_session_by_id(self, session_id: int) -> Optional[Session]:
         try:
@@ -49,7 +48,7 @@ class DjangoSessionRepository(SessionRepository):
 
     def _to_domain(self, model: SessionModel) -> Session:
         return Session(
-            id=model.id,  # type: ignore -> Django añade 'id' automáticamente; el type checker puede no inferirlo porque el modelo no tiene el id en estático.
+            id=model.id,  # type: ignore -> Django añade el atributo 'id' de forma dinámica; el type checker puede no inferirlo porque el modelo no tiene el id en estático.
             workshop_id=model.workshop_id,
             title=model.title,
             starts_at=model.starts_at,
@@ -65,3 +64,30 @@ class DjangoSessionRepository(SessionRepository):
         model.ends_at = session.ends_at
         model.capacity_max = session.capacity_max
         model.status = session.status.value
+
+
+class DjangoRegistrationRepository(RegistrationRepository):
+    def get_registration_by_id(self, registration_id: int) -> Optional[Registration]:
+        try:
+            model = RegistrationModel.objects.get(id=registration_id)
+        except RegistrationModel.DoesNotExist:
+            return None
+
+        return self._to_domain(model)
+
+    def save_registration(self, registration: Registration) -> Registration: ...
+
+    # -------------------------
+    # MAPEOS (privados)
+    # -------------------------
+
+    def _to_domain(self, model: RegistrationModel) -> Registration:
+
+        return Registration(
+            id=model.id,  # type: ignore
+            session_id=model.session_id,  # type: ignore
+            user_id=model.user_id,
+            status=RegistrationStatus(model.status),
+            created_at=model.created_at,
+            confirmation_date=model.confirmation_date,
+        )
