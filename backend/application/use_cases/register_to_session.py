@@ -31,6 +31,6 @@ class RegisterToSessionUseCase:
             status=RegistrationStatus.PENDING,
         )
 
-        self.registration_repo.save_registration(registration)
+        registration = self.registration_repo.save_registration(registration)
 
         return registration
