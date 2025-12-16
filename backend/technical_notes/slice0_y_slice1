@@ -448,13 +448,150 @@ La elección depende de estilo y claridad.
 
 
 ---
+## 6. IDs de las entidades: dominio vs Django ORM ¿por qué la entidad del dominio no recibe el id del modelo?
 
-## 6. Resumen rápido para repaso
+### 6.1. Las tres piezas y su responsabilidad (visión general)
 
-- **`default_factory`** → para valores dinámicos o mutables.
-- **`@dataclass`** → para entidades (datos + reglas), NO para casos de uso.
-- **`Protocol`** → define contratos; heredar es opcional.
-- **`DomainError`** → clase base para capturar todos los errores del dominio.
-- **Excepciones personalizadas** → transmiten contexto claro (session_id, etc.).
-- **Repos in-memory** → funcionan aunque NO hereden del protocolo.
+En arquitectura hexagonal, solemos tener:
+
+1) Dominio (Python puro)
+- Entidades como `Session` (dataclass)
+- Reglas de negocio (máquinas de estado, invariantes)
+- No sabe nada de Django ni de base de datos
+
+2) Infraestructura Django (ORM)
+- Modelos como `SessionModel(models.Model)`
+- Representan filas en tablas de la BD
+- Django Admin y el ORM trabajan directamente con esto
+
+3) Repositorio Django (adaptador)
+- `DjangoSessionRepository`
+- Traduce entre:
+  - `SessionModel` ↔ `Session`
+- Es quien toca el ORM y, por tanto, quien realmente persiste en BD
+
+Regla:
+- Dominio decide reglas.
+- ORM decide persistencia.
+- Repositorio traduce entre ambos.
+
+### 6.2. ¿Quién crea el id: Django o la base de datos?
+
+Hay dos niveles del mismo mecanismo.
+
+- Django “crea” el campo `id` en el modelo (si no lo declaras, Django añade un `AutoField/BigAutoField`).
+- La base de datos “crea” el valor numérico del id (autoincrement) cuando se inserta una fila.
+- Django, tras el INSERT, recoge el id generado y lo coloca en `model.id`.
+
+Ejemplo:
+- Django decide que la tabla tendrá una columna `id`.
+- La BD decide que el nuevo registro tendrá `id=42`.
+- Django te entrega `model.id == 42`.
+
+### 6.3. Caso A: crear una sesión desde Django Admin (no hay problema con el id)
+
+Flujo simplificado:
+
+Paso 1) Admin rellena el formulario para `SessionModel`.
+Paso 2) Pulsa “Save”.
+Paso 3) Django crea un `SessionModel(...)` y llama a `model.save()`.
+Paso 4) La BD inserta la fila y genera un id (por ejemplo, 42).
+Paso 5) Django actualiza `model.id` con 42.
+
+Aquí el dominio NO participa.
+- No se crea `Session(...)` del dominio.
+- No hay caso de uso de dominio.
+- Por tanto, no existe “un objeto de dominio que necesite enterarse del id”.
+
+Conclusión:
+- Crear sesiones desde Admin está bien para MVP y pruebas.
+- No aparece el problema de “el dominio no recibe el id” porque el dominio no ha creado nada.
+
+### 6.4. Caso B: crear una sesión desde un caso de uso (aquí sí hay problema con el id)
+
+Imaginemos un endpoint futuro:
+POST /sessions
+
+Paso 1) Llega la petición HTTP.
+Paso 2) La vista crea el caso de uso `CreateSessionUseCase(...)`.
+Paso 3) El caso de uso construye una entidad de dominio (en memoria):
+    session = Session(
+        id=0,  # o None, indicando “no persistida”
+        workshop_id=1,
+        title="Curso de acuarela",
+        starts_at=...,
+        ends_at=...,
+        capacity_max=20,
+        status=SessionStatus.DRAFT,
+    )
+
+Paso 4) El caso de uso manda persistir:
+    session_repo.save_session(session)
+
+Paso 5) El repositorio traduce al ORM:
+    model = SessionModel()
+    model.title = session.title
+    model.status = session.status.value
+    ...
+    model.save()
+
+Paso 6) La BD genera el id (ej: 42) y Django deja:
+    model.id == 42
+
+Problema:
+- Si `save_session` devuelve `None`, el caso de uso sigue teniendo el objeto `session` original.
+- Ese objeto aún tiene:
+    session.id == 0
+- Pero en la BD la sesión real es:
+    id == 42
+
+¿Por qué puede ser un problema?
+Porque el caso de uso suele necesitar uno de estos:
+
+- Devolver al cliente el id real en el JSON
+- Crear inmediatamente entidades relacionadas que necesitan ese id (p.ej. una “primera inscripción”, un evento, un log, etc.)
+- Encadenar operaciones en el mismo flujo
+
+Si el dominio no conoce el id real, se queda “desconectado” del registro persistido.
+
+### 6.5.  ¿Cómo se soluciona correctamente?
+
+#### Solución 1 (más común): que `save(...)` devuelva la entidad persistida
+Cambiar el contrato del repositorio para devolver una entidad con el id correcto:
+
+    def save_session(self, session: Session) -> Session:
+        model = SessionModel()
+        ...
+        model.save()
+        return self._to_domain(model)  # aquí ya viene id=model.id
+
+Así el caso de uso hace:
+
+    session = session_repo.save_session(session)
+    return session
+
+Ventaja:
+- No se necesita otra query “recuperar de BD”: el id ya está en `model.id` tras `save()`.
+
+#### Solución 2 (más DDD “puro”): el dominio genera el id
+Por ejemplo usando UUID:
+- La entidad se crea con un id ya definitivo.
+- El repositorio solo persiste ese id.
+- Es más avanzado y no hace falta para el MVP.
+
+### 6.6.  Resumen práctico:
+
+- En Slice 1, las sesiones se crean desde admin → no hay problema.
+- El problema del id aparece cuando:
+  - una entidad se crea en dominio (memoria),
+  - se persiste en BD,
+  - y se necesita devolver/usar el id inmediatamente.
+- Por ello ya se ha aplicado a `Registration`:
+  - `save_registration(...)` debe devolver la entidad persistida con `id` real,
+  - porque el caso de uso devuelve una `Registration` al endpoint.
+
+Regla:
+- Si el caso de uso va a devolver o seguir usando la entidad tras guardarla, el repositorio debe devolver la entidad persistida (con id correcto).
+
+
 

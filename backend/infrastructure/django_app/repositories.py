@@ -3,6 +3,11 @@ from domain.entities.session import Session, SessionStatus
 from domain.ports.session_repository import SessionRepository
 from .models import SessionModel
 
+"""
+NOTA: Ver punto 6 en "technical_notes/slice0_y_slice1"
+
+"""
+
 
 class DjangoSessionRepository(SessionRepository):
     """
