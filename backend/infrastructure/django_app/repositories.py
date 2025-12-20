@@ -29,17 +29,16 @@ class DjangoSessionRepository(SessionRepository):
         try:
             model = SessionModel.objects.get(
                 id=session.id
-            )  # Si existe la recuperaré y se hará un UPDATE
+            )  # Si existe la recuperaré y se hará un UPDATE (lo decide automaticamente el método .save() de Django)
         except SessionModel.DoesNotExist:
             model = None
 
         if model is None:
-            model = (
-                SessionModel()
-            )  # Si NO existe se hará un INSERT. Ojo! aquí no puedo pasarle 'id=session.id'
-            # puesto que (como hemos hecho en models.py) es Django quien asigna los 'id' automáticamente.
+            model = SessionModel()
+            # Si NO existe se hará un INSERT (lo decide automaticamente el método .save() de Django).
+            # Ojo! aquí no puedo pasarle 'id=session.id'puesto que (como hemos hecho en models.py) es Django quien asigna los 'id' automáticamente.
 
-        self._update_model_from_domain(model, session)
+        self.apply_domain_to_model(model, session)
         model.save()
 
     # -------------------------
@@ -57,7 +56,7 @@ class DjangoSessionRepository(SessionRepository):
             status=SessionStatus(model.status),
         )
 
-    def _update_model_from_domain(self, model: SessionModel, session: Session) -> None:
+    def apply_domain_to_model(self, model: SessionModel, session: Session) -> None:
         model.workshop_id = session.workshop_id
         model.title = session.title
         model.starts_at = session.starts_at
@@ -75,19 +74,40 @@ class DjangoRegistrationRepository(RegistrationRepository):
 
         return self._to_domain(model)
 
-    def save_registration(self, registration: Registration) -> Registration: ...
+    def save_registration(self, registration: Registration) -> Registration:
+
+        if registration.id is None:
+            model = RegistrationModel()
+        else:
+            try:
+                model = RegistrationModel.objects.get(id=registration.id)
+            except RegistrationModel.DoesNotExist:
+                model = RegistrationModel()
+
+        self._apply_domain_to_model(model, registration)
+
+        model.save()  # Se salva el objeto del modelo en la BBDD y Django inyecta en memoria en "model" el id. Por eso luego podemos hacer self._to_domain(model) y el modelo ya tiene el id
+
+        return self._to_domain(model)
 
     # -------------------------
     # MAPEOS (privados)
     # -------------------------
 
     def _to_domain(self, model: RegistrationModel) -> Registration:
-
         return Registration(
-            id=model.id,  # type: ignore
+            id=model.id,  # type: ignore[attr-defined]
             session_id=model.session_id,  # type: ignore
             user_id=model.user_id,
             status=RegistrationStatus(model.status),
             created_at=model.created_at,
             confirmation_date=model.confirmation_date,
         )
+
+    def _apply_domain_to_model(
+        self, model: RegistrationModel, registration: Registration
+    ) -> None:
+        model.session = SessionModel.objects.get(id=registration.session_id)
+        model.user_id = registration.user_id
+        model.status = registration.status.value
+        model.confirmation_date = registration.confirmation_date
