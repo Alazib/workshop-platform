@@ -513,7 +513,9 @@ Imaginemos un endpoint futuro:
 POST /sessions
 
 Paso 1) Llega la petición HTTP.
+
 Paso 2) La vista crea el caso de uso `CreateSessionUseCase(...)`.
+
 Paso 3) El caso de uso construye una entidad de dominio (en memoria):
     session = Session(
         id=0,  # o None, indicando “no persistida”
@@ -523,7 +525,7 @@ Paso 3) El caso de uso construye una entidad de dominio (en memoria):
         ends_at=...,
         capacity_max=20,
         status=SessionStatus.DRAFT,
-    )
+         )
 
 Paso 4) El caso de uso manda persistir:
     session_repo.save_session(session)
@@ -541,7 +543,7 @@ Paso 6) La BD genera el id (ej: 42) y Django deja:
 Problema:
 - Si `save_session` devuelve `None`, el caso de uso sigue teniendo el objeto `session` original.
 - Ese objeto aún tiene:
-    session.id == 0
+    session.id == 0 (o None)
 - Pero en la BD la sesión real es:
     id == 42
 

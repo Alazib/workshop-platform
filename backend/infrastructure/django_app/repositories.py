@@ -39,7 +39,9 @@ class DjangoSessionRepository(SessionRepository):
             # Ojo! aquí no puedo pasarle 'id=session.id'puesto que (como hemos hecho en models.py) es Django quien asigna los 'id' automáticamente.
 
         self.apply_domain_to_model(model, session)
-        model.save()
+        model.save()  # TODO Tiene que devolver la sesión guardada (traducida a dominio), igual que hace el repo de registration, pues si tras guardar
+        # TODO necesitamos seguir trabajando con la sesión no tendríamos el id, sería NONE el que viene por defecto al crearse la sesión en memoria (ya que el id 'real' lo crea la BBDD al guardar y Django lo inyecta
+        # TODO automáticamente como parámetro del objeto)
 
     # -------------------------
     # MAPEOS (privados)

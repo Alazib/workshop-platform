@@ -15,7 +15,7 @@ class SessionStatus(Enum):
 
 @dataclass
 class Session:
-    id: int
+    id: int  # TODO tendrá que ser "int|NONE", por el mismo motivo que lo es Registration
     workshop_id: int
     title: str
     starts_at: datetime
